@@ -166,9 +166,18 @@
   <ItemGroup>
     <ClCompile Include="GraphicsApp.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="OBJMesh.cpp" />
+    <ClCompile Include="RenderTarget.cpp" />
+    <ClCompile Include="Shader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GraphicsApp.h" />
+    <ClInclude Include="Mesh.h" />
+    <ClInclude Include="OBJMesh.h" />
+    <ClInclude Include="RenderTarget.h" />
+    <ClInclude Include="Shader.h" />
+    <ClInclude Include="tiny_obj_loader.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
