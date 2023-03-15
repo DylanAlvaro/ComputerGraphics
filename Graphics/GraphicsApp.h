@@ -19,11 +19,17 @@ public:
 	virtual void update(float deltaTime);
 	virtual void draw();
 
-	void Planets();
 
 protected:
 
 	bool LaunchShaders();
+	bool QuadLoader();
+	void QuadDraw(glm::mat4 pvm);
+
+	bool BunnyLoader();
+	void BunnyDraw(glm::mat4 pvm);
+
+	void PhongDraw(glm::mat4 pvm, glm::mat4 transform);
 
 	// camera transforms
 	glm::mat4	m_viewMatrix;
@@ -31,9 +37,19 @@ protected:
 
 	aie::ShaderProgram   m_simpleShader;
 	aie::ShaderProgram   m_colorShader;
+
+	aie::ShaderProgram   m_phongShader;
+
 	Mesh                 m_quadMesh;
 	glm::mat4            m_quadTransform;
 
 	aie::OBJMesh         m_bunnyMesh;
 	glm::mat4            m_bunnyTransform;
+
+	struct Light
+	{
+		glm::vec3 direction;
+	};
+
+	Light m_light;
 };
