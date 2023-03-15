@@ -39,6 +39,9 @@
     <ClCompile Include="Shader.cpp">
       <Filter>Source Files\Provided</Filter>
     </ClCompile>
+    <ClCompile Include="Planets.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GraphicsApp.h">
@@ -58,6 +61,9 @@
     </ClInclude>
     <ClInclude Include="tiny_obj_loader.h">
       <Filter>Header Files\Provided</Filter>
+    </ClInclude>
+    <ClInclude Include="Planets.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

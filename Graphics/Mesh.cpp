@@ -27,6 +27,7 @@ void Mesh::InitialiseQuad()
 	glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
 
 
+
 	//define the 6 vertices for our two triangles to make a quad, 
 	// in a  counter-clockwise direction.
 	Vertex vertices[6];
@@ -43,7 +44,10 @@ void Mesh::InitialiseQuad()
 		vertices, GL_STATIC_DRAW);
 
 	// Now we will enable the first element as the position
-	glEnableVertexAttribArray(0);
+
+	glDisableVertexAttribArray(0);
+
+	//glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
 
 	// Next we unbind the buffers
@@ -59,8 +63,58 @@ void Mesh::InitialiseFullscreenQuad()
 {
 }
 
-void Mesh::Initialise()
+void Mesh::Initialise(unsigned int vertexCount, const Vertex* vertices, unsigned int indexCount, unsigned int* indices)
 {
+	// Check if the mesh is not initialised already 
+	assert(m_vao == 0);
+
+	// Generate buffers
+	glGenBuffers(1, &m_vbo);
+	glGenVertexArrays(1, &m_vao);
+
+	// Bind the vertex array, this will be our mesh buffer 
+	glBindVertexArray(m_vao);
+
+	//bind the vertex buffer
+	glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+
+	//fill the vertex buffer
+	glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(Vertex), vertices, GL_STATIC_DRAW);
+
+
+	// Enable the first element as the position
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
+
+
+	//Bind the indices if there are any defined
+
+	if (indexCount != 0)
+	{
+		glGenBuffers(1, &m_ibo);
+
+		//Bind the vertex buffer 
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ibo);
+
+		// fill the vertex buffer
+
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount *
+			sizeof(unsigned int), indices, GL_STATIC_DRAW);
+
+		m_triCount = indexCount / 3;
+	}
+	else
+	{
+		m_triCount = vertexCount / 3;
+	}
+
+	// unbind our buffers
+	glBindVertexArray(0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+
 }
 
 void Mesh::Draw()

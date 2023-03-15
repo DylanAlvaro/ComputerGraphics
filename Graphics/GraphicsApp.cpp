@@ -28,6 +28,7 @@ bool GraphicsApp::startup() {
 	m_viewMatrix = glm::lookAt(vec3(10), vec3(0), vec3(0, 1, 0));
 	m_projectionMatrix = glm::perspective(glm::pi<float>() * 0.25f, 16.0f / 9.0f, 0.1f, 1000.0f);
 
+	Planets();
 
 	return LaunchShaders();
 }
@@ -68,12 +69,62 @@ void GraphicsApp::update(float deltaTime) {
 	mat4 t = glm::rotate(mat4(1), time, glm::normalize(vec3(0, 1, 0)));
 	t[3] = vec4(0, 0, 0, 1);
 
-
 	
+}
+
+void GraphicsApp::draw() {
+
+	// wipe the screen to the background colour
+	clearScreen();
+
+	// update perspective based on screen size
+	m_projectionMatrix = glm::perspective(glm::pi<float>() * 0.25f, 
+		getWindowWidth() / (float)getWindowHeight(), 0.1f, 1000.0f);
+
+	auto pvm = m_projectionMatrix * m_viewMatrix * m_quadTransform;
+
+#pragma region SimpleShader
+	//Bind the shader
+	m_simpleShader.bind();
+
+	// Bind the transform
+	m_simpleShader.bindUniform("ProjectionViewModel", pvm);
+
+	//Draw the quad using Mesh's draw
+	//m_quadMesh.Draw();
+
+
+#pragma endregion
+
+
+#pragma region ColorShader
+	//bind the shader
+	m_colorShader.bind();
+
+	//bind the transform
+	pvm = m_projectionMatrix * m_viewMatrix * m_bunnyTransform;
+	m_colorShader.bindUniform("ProjectionViewModel", pvm);
+
+	//bind the color
+	m_colorShader.bindUniform("BaseColor", glm::vec4(0.52f, 0.23f, 0.06f, 1.f));
+
+	//draw the quad using Mesh's draw
+	m_bunnyMesh.draw();
+#pragma endregion
+
+
+	Gizmos::draw(m_projectionMatrix * m_viewMatrix);
+}
+
+void GraphicsApp::Planets()
+{
+
+	float time = getTime();
+
 	Gizmos::addSphere(vec3(0, 0, 0), 1, 8, 8, vec4(1, 1, 0, 0.5f)); // sun
 
 	mat4 mercury = mat4(1);
-	mercury = translate(mercury,vec3(glm::sin(time * 8.23f) * 1.6f, -1, glm::cos(time * 8.23f) * 1.6f));
+	mercury = translate(mercury, vec3(glm::sin(time * 8.23f) * 1.6f, -1, glm::cos(time * 8.23f) * 1.6f));
 	Gizmos::addSphere(vec3(0), .25f, 8, 8, vec4(0.35, 0.22, 0.08, 1), &mercury); // mercury 
 
 	mat4 Venus = mat4(1);
@@ -101,7 +152,7 @@ void GraphicsApp::update(float deltaTime) {
 	Gizmos::addSphere(vec3(0), .65f, 8, 8, vec4(1, 1, 0, 0.5f), &Saturn); // Saturn
 
 	mat4 SaturnRing = mat4(1);
-	SaturnRing = translate(SaturnRing, vec3(glm::sin(time * .05f) * 7.5f, - 1, glm::cos(time * .05f) * 7.5f));
+	SaturnRing = translate(SaturnRing, vec3(glm::sin(time * .05f) * 7.5f, -1, glm::cos(time * .05f) * 7.5f));
 	Gizmos::addRing(vec3(0), .75f, 1.f, 8, vec4(1, 1, 0, 0.5f), &SaturnRing); // saturn ring
 
 	mat4 Uranus = mat4(1);
@@ -117,40 +168,11 @@ void GraphicsApp::update(float deltaTime) {
 	Neptune = translate(Neptune, vec3(glm::sin(time * .00606f) * 9.75f, -1, glm::cos(time * .00606f) * 9.75f));
 	Gizmos::addSphere(vec3(0), .25f, 8, 8, vec4(1, 1, 0, 0.5f), &Neptune); // Neptune
 
-
-	
-}
-
-void GraphicsApp::draw() {
-
-	// wipe the screen to the background colour
-	clearScreen();
-
-	// update perspective based on screen size
-	m_projectionMatrix = glm::perspective(glm::pi<float>() * 0.25f, 
-		getWindowWidth() / (float)getWindowHeight(), 0.1f, 1000.0f);
-
-#pragma region SimpleShader
-	//Bind the shader
-	m_simpleShader.bind();
-
-	// Bind the transform
-
-	auto pvm = m_projectionMatrix * m_viewMatrix * m_quadTransform;
-	m_simpleShader.bindUniform("ProjectionViewModel", pvm);
-
-	//Draw the quad using Mesh's draw
-	m_quadMesh.Draw();
-
-
-#pragma endregion
-
-
-	Gizmos::draw(m_projectionMatrix * m_viewMatrix);
 }
 
 bool GraphicsApp::LaunchShaders()
 {
+#pragma region Quad
 	m_simpleShader.loadShader(aie::eShaderStage::VERTEX,
 		"./shaders/simple.vert");
 	m_simpleShader.loadShader(aie::eShaderStage::FRAGMENT,
@@ -162,7 +184,18 @@ bool GraphicsApp::LaunchShaders()
 		return false;
 	}
 
-	m_quadMesh.InitialiseQuad();
+	// Defined as 4 vertices for the 2 triangles
+	Mesh::Vertex vertices[4];
+	vertices[0].position = { -0.5f, 0, 0.5f, 1, };
+	vertices[1].position = { 0.5,  0, 0.5f, 1, };
+	vertices[2].position = { -0.5f, 0, -0.5f, 1, };
+	vertices[3].position = { 0.5f, 0, -0.5f, 1, };
+
+	unsigned int indices[6] = { 0, 1, 2 ,2, 1, 3 };
+
+	m_quadMesh.Initialise(4, vertices, 6, indices);
+
+	//m_quadMesh.InitialiseQuad();
 
 	// this is a 10 'unit' wide quad
 	m_quadTransform = {
@@ -171,6 +204,35 @@ bool GraphicsApp::LaunchShaders()
 		0, 0, 10, 0,
 		0, 0, 0,  1
 	};
+#pragma endregion
+
+#pragma region Bunny
+	m_colorShader.loadShader(aie::eShaderStage::VERTEX, 
+		"./shaders/color.vert");
+	m_colorShader.loadShader(aie::eShaderStage::FRAGMENT,
+		"./shaders/color.frag");
+
+
+	if (m_colorShader.link() == false)
+	{
+		printf("Color Shader Error: %s\n ", m_colorShader.getLastError());
+		return false;
+	}
+
+	if (m_bunnyMesh.load("./stanford/Bunny.obj") == false)
+	{
+		printf("Bunny Mesh Error!\n");
+		return false;
+	}
+
+	m_bunnyTransform = {
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0,  1
+	};
+
+#pragma endregion
 
 	return true;
 }
