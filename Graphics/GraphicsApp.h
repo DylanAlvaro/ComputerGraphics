@@ -49,7 +49,10 @@ protected:
 	struct Light
 	{
 		glm::vec3 direction;
+		glm::vec3 color;
 	};
 
-	Light m_light;
+	Light      m_light;
+	glm::vec3  m_ambientLight;
+
 };

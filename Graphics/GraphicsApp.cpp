@@ -68,7 +68,8 @@ void GraphicsApp::update(float deltaTime) {
 
 	// rotate the light to emulate a 'day/night' cycle
 	m_light.direction = glm::normalize(glm::vec3(glm::cos(time * 2), glm::sin(time * 2), 0));
-
+	m_light.color = { 1, 1, 1 };
+	m_ambientLight = { 0.5, 0.5, 0.5 };
 
 	mat4 t = glm::rotate(mat4(1), time, glm::normalize(vec3(0, 1, 0)));
 	t[3] = vec4(0, 0, 0, 1);
@@ -220,7 +221,7 @@ bool GraphicsApp::BunnyLoader()
 		return false;
 	}
 
-	if (m_bunnyMesh.load("./stanford/Bunny.obj") == false)
+	if (m_bunnyMesh.load("./stanford/Dragon.obj") == false)
 	{
 		printf("Bunny Mesh Error!\n");
 		return false;
@@ -256,15 +257,22 @@ void GraphicsApp::PhongDraw(glm::mat4 pvm, glm::mat4 transform)
 	//bind the phong shader
 	m_phongShader.bind();
 
+
+	//bind the camera position
+	m_phongShader.bindUniform("CameraPosition", 
+		glm::vec3(glm::inverse(m_viewMatrix)[3]));
+
 	//bind the directional light  we defined
 	m_phongShader.bindUniform("LightDirection", m_light.direction);
-
+	m_phongShader.bindUniform("LightColor", m_light.color);
+	m_phongShader.bindUniform("AmbientColor", m_ambientLight);
 	//bind the pvm using the one provided
 	m_phongShader.bindUniform("ProjectionViewModel", pvm);
 
 	//bind the transform using the one provided
 	m_phongShader.bindUniform("ModelMatrix", transform);
 
+	//draw the phong lightning
 	m_bunnyMesh.draw();
 }
 
