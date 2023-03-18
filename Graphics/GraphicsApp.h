@@ -31,6 +31,8 @@ protected:
 
 	void PhongDraw(glm::mat4 pvm, glm::mat4 transform);
 
+	void ImGUIRefresher();
+
 	// camera transforms
 	glm::mat4	m_viewMatrix;
 	glm::mat4	m_projectionMatrix;
@@ -55,4 +57,6 @@ protected:
 	Light      m_light;
 	glm::vec3  m_ambientLight;
 
+
+	bool toggleColor;
 };

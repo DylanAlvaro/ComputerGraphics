@@ -3,6 +3,7 @@
 #include "Input.h"
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
+#include "imgui.h"
 
 using glm::vec3;
 using glm::vec4;
@@ -28,6 +29,8 @@ bool GraphicsApp::startup() {
 	m_viewMatrix = glm::lookAt(vec3(15), vec3(0), vec3(0, 1, 0));
 	m_projectionMatrix = glm::perspective(glm::pi<float>() * 0.25f, 16.0f / 9.0f, 0.1f, 1000.0f);
 
+	m_light.color = { 1, 1, 1 };
+	m_ambientLight = { 0.5, 0.5, 0.5 };
 
 	return LaunchShaders();
 }
@@ -68,11 +71,12 @@ void GraphicsApp::update(float deltaTime) {
 
 	// rotate the light to emulate a 'day/night' cycle
 	m_light.direction = glm::normalize(glm::vec3(glm::cos(time * 2), glm::sin(time * 2), 0));
-	m_light.color = { 1, 1, 1 };
-	m_ambientLight = { 0.5, 0.5, 0.5 };
+	
 
 	mat4 t = glm::rotate(mat4(1), time, glm::normalize(vec3(0, 1, 0)));
 	t[3] = vec4(0, 0, 0, 1);
+
+	ImGUIRefresher();
 
 	//Gizmos::addSphere(vec3(0, 0, 0), 1, 8, 8, vec4(1, 1, 0, 0.5f)); // sun
 	//
@@ -221,7 +225,7 @@ bool GraphicsApp::BunnyLoader()
 		return false;
 	}
 
-	if (m_bunnyMesh.load("./stanford/Dragon.obj") == false)
+	if (m_bunnyMesh.load("./stanford/Bunny.obj") == false)
 	{
 		printf("Bunny Mesh Error!\n");
 		return false;
@@ -274,6 +278,20 @@ void GraphicsApp::PhongDraw(glm::mat4 pvm, glm::mat4 transform)
 
 	//draw the phong lightning
 	m_bunnyMesh.draw();
+}
+
+void GraphicsApp::ImGUIRefresher()
+{
+	ImGui::Begin("Light Settings");
+
+
+	ImGui::Checkbox("Toggle Color", &toggleColor);
+	if (toggleColor)
+	{
+		ImGui::ColorEdit4("Change Color", &m_light.color[0]);
+	}
+
+	ImGui::End();
 }
 
 
