@@ -1,7 +1,9 @@
 #pragma once
 #include "glm/glm.hpp"
+#include "SimpleCamera.h"
 
-class OribitalCamera
+
+class OribitalCamera : public SimpleCamera
 {
 public:
 	OribitalCamera();

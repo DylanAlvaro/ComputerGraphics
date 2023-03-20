@@ -26,7 +26,7 @@ protected:
 	float m_theta;
 	float m_phi;
 	float m_aspectRatio;
-
+	float m_turnSpeed = glm::radians(180.f);
 
 	glm::vec3 m_position;
 	glm::mat4 m_projectionViewTransform;

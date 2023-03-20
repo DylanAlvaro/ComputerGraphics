@@ -42,6 +42,12 @@ protected:
 
 	void ImGUIRefresher();
 
+	void SetFlyCamera();
+	void SetOribtalCamera();
+	void SetStationaryCamera();
+	void SetSimpleCamera();
+
+
 	// camera transforms
 	glm::mat4	m_viewMatrix;
 	glm::mat4	m_projectionMatrix;
@@ -62,6 +68,8 @@ protected:
 
 	SimpleCamera         m_simpleCamera;
 	StationaryCamera     m_stationaryCam;
+	FlyCamera            m_flyCam;
+	OribitalCamera       m_oribtalCam;
 
 	struct Light
 	{
@@ -74,4 +82,10 @@ protected:
 
 
 	bool toggleColor;
+	bool toggleStationaryCam = false;
+	bool toggleOribtalCam = false;
+	bool toggleFlyCam = false;
+	bool toggleSimpleCam = false;
+
+	glm::vec3 SimpleCamPos = { 0, 0, 0 };
 };

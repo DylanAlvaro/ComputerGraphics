@@ -1,10 +1,14 @@
 #include "StationaryCamera.h"
 
-StationaryCamera::StationaryCamera(glm::vec3 position, glm::vec3 rotation)
+StationaryCamera::StationaryCamera()
 {
+}
 
+StationaryCamera::~StationaryCamera()
+{
 }
 
 void StationaryCamera::SetRotation(glm::vec3 rotation)
 {
+	m_turnSpeed = glm::radians(180.f);
 }

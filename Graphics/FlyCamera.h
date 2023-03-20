@@ -11,7 +11,7 @@ public:
 
 protected:
 
-	float m_turnSpeed = glm::radians(180.f);
+	
 
 	float m_speed;
 	glm::vec3 m_up;

@@ -27,8 +27,8 @@ bool GraphicsApp::startup() {
 	Gizmos::create(10000, 10000, 10000, 10000);
 
 	// create simple camera transforms
-	m_viewMatrix = glm::lookAt(vec3(15), vec3(0), vec3(0, 1, 0));
-	m_projectionMatrix = glm::perspective(glm::pi<float>() * 0.25f, 16.0f / 9.0f, 0.1f, 1000.0f);
+	//m_viewMatrix = glm::lookAt(vec3(15), vec3(0), vec3(0, 1, 0));
+	//m_projectionMatrix = glm::perspective(glm::pi<float>() * 0.25f, 16.0f / 9.0f, 0.1f, 1000.0f);
 
 	m_light.color = { 1, 1, 1 };
 	m_ambientLight = { 0.5, 0.5, 0.5 };
@@ -73,12 +73,16 @@ void GraphicsApp::update(float deltaTime) {
 	// rotate the light to emulate a 'day/night' cycle
 	
 
-	m_quadTransform = glm::rotate(m_quadTransform, .02f, glm::vec3(0, 1, 0));
+	//m_quadTransform = glm::rotate(m_quadTransform, .02f, glm::vec3(0, 1, 0));
 
 	mat4 t = glm::rotate(mat4(1), time, glm::normalize(vec3(0, 1, 0)));
 	t[3] = vec4(0, 0, 0, 1);
 
-	m_simpleCamera.Update(deltaTime);
+
+
+	//m_simpleCamera.Update(deltaTime);
+
+	m_flyCam.Update(deltaTime);
 
 	ImGUIRefresher();
 
@@ -138,9 +142,18 @@ void GraphicsApp::draw() {
 
 	// update perspective based on screen size
 	
-	m_viewMatrix = m_simpleCamera.GetViewMatrix();
-	//glm::lookAt(vec3(15), vec3(0), vec3(0, 1, 0));
-	m_projectionMatrix = m_simpleCamera.GetProjectionMatrix(getWindowWidth(), getWindowHeight());
+	if (toggleFlyCam)
+		SetFlyCamera();
+	
+	if (toggleStationaryCam)
+		SetStationaryCamera();
+	
+	if (toggleOribtalCam)
+		SetOribtalCamera();
+	
+	if (toggleSimpleCam)
+		SetSimpleCamera();
+
 	//glm::perspective(glm::pi<float>() * 0.25f, 16.0f / 9.0f, 0.1f, 1000.0f);
 
 	auto pv = m_projectionMatrix * m_viewMatrix;
@@ -407,20 +420,65 @@ void GraphicsApp::ImGUIRefresher()
 {
 	ImGui::Begin("Light Settings");
 
-
 	ImGui::ColorEdit4("Change Color", &m_light.color[0]);
-	//ImGui::Checkbox("Toggle Color", &toggleColor);
-	//if (toggleColor)
-	//{
-	//}
 
 	ImGui::End();
 
-	ImGui::Begin("Light Direction");
+	ImGui::Begin("Camera Positions");
+	//Stationary Cam
+	ImGui::Checkbox("Toggle Stationary Cam", &toggleStationaryCam);
+	// Oribtal Cam
+	ImGui::Checkbox("Toggle Oribtal Cam", &toggleOribtalCam);
+	// Fly Cam
+	if (ImGui::CollapsingHeader("Fly Cam"))
+	{
+		ImGui::Checkbox("Toggle Fly Cam", &toggleFlyCam);
 
-	ImGui::ColorEdit4("Color", &m_light.direction[0]);
+	}
+	// Simple Cam
+	if (ImGui::CollapsingHeader("Simple Cam"))
+	{
+	    ImGui::Checkbox("Toggle Simple Cam", &toggleSimpleCam);
+		ImGui::DragFloat3("Camera Position", &SimpleCamPos[0]);
+		ImGui::DragFloat3("Camera Position", &SimpleCamPos[0]);
+	}
 
 	ImGui::End();
+
+	ImGui::Begin("Solar System ");
+
+	if (ImGui::CollapsingHeader("Sun"))
+	{
+
+	}
+
+	ImGui::End();
+
 }
+
+void GraphicsApp::SetFlyCamera()
+{
+	m_viewMatrix = m_flyCam.GetViewMatrix();
+	m_projectionMatrix = m_flyCam.GetProjectionMatrix(getWindowWidth(), getWindowHeight());
+}
+
+void GraphicsApp::SetOribtalCamera()
+{
+	m_viewMatrix = m_oribtalCam.GetViewMatrix();
+	m_projectionMatrix = m_oribtalCam.GetProjectionMatrix(getWindowWidth(), getWindowHeight());
+}
+
+void GraphicsApp::SetStationaryCamera()
+{
+	m_viewMatrix = m_stationaryCam.GetViewMatrix();
+	m_projectionMatrix = m_stationaryCam.GetProjectionMatrix(getWindowWidth(), getWindowHeight());
+}
+
+void GraphicsApp::SetSimpleCamera()
+{
+	m_viewMatrix = glm::lookAt(vec3(15), vec3(0), vec3(0, 1, 0));
+	m_projectionMatrix = glm::perspective(glm::pi<float>() * 0.25f, 16.0f / 9.0f, 0.1f, 1000.0f);
+}
+
 
 

@@ -2,6 +2,14 @@
 #include <glm/ext.hpp>
 #include "Input.h"
 
+FlyCamera::FlyCamera()
+{
+}
+
+FlyCamera::~FlyCamera()
+{
+}
+
 void FlyCamera::Update(float deltaTime)
 {
 	aie::Input* Input = aie::Input::getInstance();
