@@ -33,6 +33,7 @@ bool GraphicsApp::startup() {
 	m_light.color = { 1, 1, 1 };
 	m_ambientLight = { 0.5, 0.5, 0.5 };
 
+
 	m_light.direction = glm::normalize(glm::vec3(glm::cos(time * 2), glm::sin(time * 2), 0));
 	return LaunchShaders();
 }
@@ -85,53 +86,9 @@ void GraphicsApp::update(float deltaTime) {
 	m_flyCam.Update(deltaTime);
 
 	ImGUIRefresher();
+	ImGUIPlanets();
+	ImGUIShapes();
 
-	//Gizmos::addSphere(vec3(0, 0, 0), 1, 8, 8, vec4(1, 1, 0, 0.5f)); // sun
-	//
-	//mat4 mercury = mat4(1);
-	//mercury = translate(mercury, vec3(glm::sin(time * 8.23f) * 1.6f, -1, glm::cos(time * 8.23f) * 1.6f));
-	//Gizmos::addSphere(vec3(0), .25f, 8, 8, vec4(0.35, 0.22, 0.08, 1), &mercury); // mercury 
-	//
-	//mat4 Venus = mat4(1);
-	//Venus = translate(Venus, vec3(vec3(glm::sin(time * 1.622f) * 2.5f, -1, glm::cos(time * 1.622f) * 2.5f)));
-	//Gizmos::addSphere(vec3(0), .35f, 8, 8, vec4(1, 1, 1, 0.5f), &Venus); // venus
-	//
-	//mat4 Earth = mat4(1);
-	//Earth = translate(Earth, vec3(glm::sin(time * 1) * 3.75f, -1, glm::cos(time * 1) * 3.75f));
-	//Gizmos::addSphere(vec3(0), .65f, 8, 8, vec4(0.18, 0.46, 0.13, 1), &Earth); // Earth
-	//
-	//mat4 EarthMoon = mat4(1);
-	//EarthMoon = translate(EarthMoon, vec3(glm::sin(time * -3.f) * 1, -1, glm::cos(time * -3.f) * 1));
-	//Gizmos::addSphere(vec3(glm::sin(time) * 4.f, 0, glm::cos(time) * 4.f), .25f, 16, 16, vec4(0, 0, 1, 0.5f), &EarthMoon);
-	//
-	//mat4 Mars = mat4(1);
-	//Mars = translate(Mars, vec3(glm::sin(time * .531f) * 5.5f, -1, glm::cos(time * .531f) * 5.5f));
-	//Gizmos::addSphere(vec3(0), .55f, 8, 8, vec4(0.51, 0.13, 0.07, 1), &Mars); // Mars
-	//
-	//mat4 Jupitar = mat4(1);
-	//Jupitar = translate(Jupitar, vec3(glm::sin(time * .094f) * 6.3f, -1, glm::cos(time * .094f) * 6.3f));
-	//Gizmos::addSphere(vec3(0), .45f, 8, 8, vec4(0.91, 0.58, 0.23, 1), &Jupitar); // Jupitar
-	//
-	//mat4 Saturn = mat4(1);
-	//Saturn = translate(Saturn, vec3(glm::sin(time * .05f) * 7.5f, -1, glm::cos(time * .05f) * 7.5f));
-	//Gizmos::addSphere(vec3(0), .65f, 8, 8, vec4(1, 1, 0, 0.5f), &Saturn); // Saturn
-	//
-	//mat4 SaturnRing = mat4(1);
-	//SaturnRing = translate(SaturnRing, vec3(glm::sin(time * .05f) * 7.5f, -1, glm::cos(time * .05f) * 7.5f));
-	//Gizmos::addRing(vec3(0), .75f, 1.f, 8, vec4(1, 1, 0, 0.5f), &SaturnRing); // saturn ring
-	//
-	//mat4 Uranus = mat4(1);
-	//Uranus = translate(Uranus, vec3(glm::sin(time * .01189f) * 8.5f, -1, glm::cos(time * .01189f) * 8.5f));
-	//Gizmos::addSphere(vec3(0), .25f, 8, 8, vec4(0.23, 0.35, 0.91, 1), &Uranus); // Uranus
-	//
-	//mat4 UranusRing = mat4(1);
-	//UranusRing = translate(UranusRing, vec3(glm::sin(time * .01189f) * 8.5f, -1, glm::cos(time * .01189f) * 8.5f));
-	////Gizmos::addRing(vec3(0), .25f, 1.2f, 8, vec4(0, 1, 0, 0.5f), &UranusRing);
-	//Gizmos::addRing(vec3(0), .35f, .55f, 8, vec4(0.23, 0.35, 0.91, 1), &UranusRing); // Uranus ring
-	//
-	//mat4 Neptune = mat4(1);
-	//Neptune = translate(Neptune, vec3(glm::sin(time * .00606f) * 9.75f, -1, glm::cos(time * .00606f) * 9.75f));
-	//Gizmos::addSphere(vec3(0), .25f, 8, 8, vec4(1, 1, 0, 0.5f), &Neptune); // Neptune
 
 }
 
@@ -158,7 +115,10 @@ void GraphicsApp::draw() {
 
 	auto pv = m_projectionMatrix * m_viewMatrix;
 	//draw the quad in QuadLoader()
-	QuadDraw(pv * m_quadTransform);
+
+	//if (toggleBox)
+		//QuadDraw(pv * m_quadTransform);
+		QuadTextureDraw(pv * m_quadTransform);
 
 	BoxDraw(pv * m_boxTransform);
 
@@ -174,10 +134,14 @@ void GraphicsApp::draw() {
 bool GraphicsApp::LaunchShaders()
 {
 	// used for loading in a simple quad
-	if (!QuadLoader())
-		return false;
+	//if (!QuadLoader())
+	//	return false;
 	// used for loading in an OBJ bunny
 	if (!BunnyLoader())
+		return false;
+
+	// Used for loading a texure on our quad
+	if (!QuadTextureLoader())
 		return false;
 
 	return true;
@@ -392,6 +356,55 @@ void GraphicsApp::BunnyDraw(glm::mat4 pvm)
 	m_bunnyMesh.draw();
 }
 
+bool GraphicsApp::QuadTextureLoader()
+{
+	m_texturedShader.loadShader(aie::eShaderStage::VERTEX,
+		"./shaders/textured.vert");
+	m_texturedShader.loadShader(aie::eShaderStage::FRAGMENT,
+		"./shaders/textured.frag");
+
+	if (m_texturedShader.link() == false)
+	{
+		printf("Textured Shader has an Error: %s\n", m_texturedShader.getLastError());
+		return false;
+	}
+
+	if (m_gridTexture.load("./textures/numbered_grid.tga") == false)
+	{
+		printf("Failed to load the grid texture correctly! \n");
+		return false;
+	}
+
+	m_quadMesh.InitialiseQuad();
+
+	m_quadTransform = {
+		10, 0, 0, 0,
+		0, 10, 0, 0,
+		0, 0, 10, 0,
+		0, 0, 0,  1
+	};
+
+	return false;
+}
+
+void GraphicsApp::QuadTextureDraw(glm::mat4 pvm)
+{
+	//Bind the shader
+	m_texturedShader.bind();
+
+	// Bind the transform
+	m_texturedShader.bindUniform("ProjectionViewModel", pvm);
+
+	// Bind the texture location 
+	m_texturedShader.bindUniform("diffuseTexture", 0);
+
+	// Bind the texture to a specific location
+	m_gridTexture.bind(0);
+
+	//Draw the quad using Mesh's draw
+	m_quadMesh.Draw();
+}
+
 void GraphicsApp::PhongDraw(glm::mat4 pvm, glm::mat4 transform)
 {
 	//bind the phong shader
@@ -440,21 +453,74 @@ void GraphicsApp::ImGUIRefresher()
 	{
 	    ImGui::Checkbox("Toggle Simple Cam", &toggleSimpleCam);
 		ImGui::DragFloat3("Camera Position", &SimpleCamPos[0]);
-		ImGui::DragFloat3("Camera Position", &SimpleCamPos[0]);
 	}
 
 	ImGui::End();
 
+
+}
+
+void GraphicsApp::ImGUIPlanets()
+{
 	ImGui::Begin("Solar System ");
+
+	//ImGui::Checkbox("Toggle Planets", &)
 
 	if (ImGui::CollapsingHeader("Sun"))
 	{
-
+		ImGui::Checkbox("Visible", &sunVisible);
+	}
+	if (ImGui::CollapsingHeader("Mercury"))
+	{
+		ImGui::Checkbox("Visible", &mercuryVisible);
+	}
+	if (ImGui::CollapsingHeader("Venus"))
+	{
+		ImGui::Checkbox("Visible", &venusVisible);
+	}
+	if (ImGui::CollapsingHeader("Earth"))
+	{
+		ImGui::Checkbox("Toggle Simple Cam", &earthVisible);
+	}
+	if (ImGui::CollapsingHeader("Mars"))
+	{
+		ImGui::Checkbox("Toggle Simple Cam", &marsVisible);
+	}
+	if (ImGui::CollapsingHeader("Jupitar"))
+	{
+		ImGui::Checkbox("Toggle Simple Cam", &jupitarVisible);
+	}
+	if (ImGui::CollapsingHeader("Saturn"))
+	{
+		ImGui::Checkbox("Toggle Simple Cam", &saturnVisible);
+	}
+	if (ImGui::CollapsingHeader("Uranus"))
+	{
+		ImGui::Checkbox("Toggle Simple Cam", &uranusVisible);
+	}
+	if (ImGui::CollapsingHeader("Neptune"))
+	{
+		ImGui::Checkbox("Toggle Simple Cam", &neptuneVisible);
 	}
 
 	ImGui::End();
-
 }
+
+void GraphicsApp::ImGUIShapes()
+{
+	ImGui::Begin("Primitive Meshes");
+
+	ImGui::Checkbox("Box", &toggleBox);
+	ImGui::Checkbox("Cylinder", &toggleCylinder);
+	ImGui::Checkbox("Pyramid", &togglePyramid);
+	ImGui::Checkbox("Sphere", &toggleSphere);
+	ImGui::Checkbox("Cone", &toggleCone);
+	ImGui::Checkbox("Grid", &toggleGrid);
+
+	ImGui::End();
+}
+
+
 
 void GraphicsApp::SetFlyCamera()
 {

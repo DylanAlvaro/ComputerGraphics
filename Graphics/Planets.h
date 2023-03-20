@@ -1,9 +1,13 @@
 #pragma once
-class Planets
+#include "GraphicsApp.h"
+
+class Planets : public GraphicsApp
 {
 	Planets();
+	~Planets();
 	virtual void Draw();
-	virtual void Update();
+
+	void Update(float deltaTime);
 
 };
 

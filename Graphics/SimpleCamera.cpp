@@ -74,3 +74,34 @@ glm::mat4 SimpleCamera::GetWorldTransform(glm::vec3 camPos, glm::vec3 eularAngle
 {
 	return glm::mat4();
 }
+
+glm::mat4 SimpleCamera::GetProjectionViewMatrix()
+{
+	return glm::mat4();
+}
+
+glm::mat4 SimpleCamera::GetAspectRatio()
+{
+	return glm::mat4(m_aspectRatio);
+}
+
+void SimpleCamera::SetPosition(glm::vec3 position)
+{
+}
+
+void SimpleCamera::SetAspectRatio(float width, float height)
+{
+	
+}
+
+void SimpleCamera::SetViewMatrix(glm::vec3 from, glm::vec3 to, glm::vec3 up)
+{
+}
+
+void SimpleCamera::SetProjectionMatrix(float fieldOfView, float aspectRatio, float, float)
+{
+}
+
+void SimpleCamera::SetProjectionMatrix(float fieldOfView, float width, float height, float, float)
+{
+}
