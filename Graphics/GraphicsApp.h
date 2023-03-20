@@ -5,6 +5,10 @@
 #include "Mesh.h"
 #include "Shader.h"
 #include "OBJMesh.h"
+#include "SimpleCamera.h"
+#include "StationaryCamera.h"
+#include "FlyCamera.h"
+#include "OribitalCamera.h"
 
 
 class GraphicsApp : public aie::Application {
@@ -24,6 +28,11 @@ protected:
 
 	bool LaunchShaders();
 	bool QuadLoader();
+
+	bool BoxLoader();
+
+	void BoxDraw(glm::mat4 pvm);
+
 	void QuadDraw(glm::mat4 pvm);
 
 	bool BunnyLoader();
@@ -45,8 +54,14 @@ protected:
 	Mesh                 m_quadMesh;
 	glm::mat4            m_quadTransform;
 
+	Mesh                 m_boxMesh;
+	glm::mat4            m_boxTransform;
+
 	aie::OBJMesh         m_bunnyMesh;
 	glm::mat4            m_bunnyTransform;
+
+	SimpleCamera         m_simpleCamera;
+	StationaryCamera     m_stationaryCam;
 
 	struct Light
 	{

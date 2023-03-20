@@ -20,6 +20,7 @@ GraphicsApp::~GraphicsApp() {
 
 bool GraphicsApp::startup() {
 	
+	float time = getTime();
 	setBackgroundColour(0.25f, 0.25f, 0.25f);
 
 	// initialise gizmo primitive counts
@@ -32,6 +33,7 @@ bool GraphicsApp::startup() {
 	m_light.color = { 1, 1, 1 };
 	m_ambientLight = { 0.5, 0.5, 0.5 };
 
+	m_light.direction = glm::normalize(glm::vec3(glm::cos(time * 2), glm::sin(time * 2), 0));
 	return LaunchShaders();
 }
 
@@ -42,21 +44,21 @@ void GraphicsApp::shutdown() {
 
 void GraphicsApp::update(float deltaTime) {
 
-
+	float time = getTime();
 	// wipe the gizmos clean for this frame
 	Gizmos::clear();
 
 	 //draw a simple grid with gizmos
-	vec4 white(0);
-	vec4 black(0, 0, 0, 1);
-	for (int i = 0; i < 21; ++i) {
-		Gizmos::addLine(vec3(-10 + i, 0, 10),
-						vec3(-10 + i, 0, -10),
-						i == 10 ? white : black);
-		Gizmos::addLine(vec3(10, 0, -10 + i),
-						vec3(-10, 0, -10 + i),
-						i == 10 ? white : black);
-	}
+	//vec4 white(0);
+	//vec4 black(0, 0, 0, 1);
+	//for (int i = 0; i < 21; ++i) {
+	//	Gizmos::addLine(vec3(-10 + i, 0, 10),
+	//					vec3(-10 + i, 0, -10),
+	//					i == 10 ? white : black);
+	//	Gizmos::addLine(vec3(10, 0, -10 + i),
+	//					vec3(-10, 0, -10 + i),
+	//					i == 10 ? white : black);
+	//}
 
 	// add a transform so that we can see the axis
 	Gizmos::addTransform(mat4(0));
@@ -67,14 +69,16 @@ void GraphicsApp::update(float deltaTime) {
 	if (input->isKeyDown(aie::INPUT_KEY_ESCAPE))
 		quit();
 	//grab the time since the application has started
-	float time = getTime();
 
 	// rotate the light to emulate a 'day/night' cycle
-	m_light.direction = glm::normalize(glm::vec3(glm::cos(time * 2), glm::sin(time * 2), 0));
 	
+
+	m_quadTransform = glm::rotate(m_quadTransform, .02f, glm::vec3(0, 1, 0));
 
 	mat4 t = glm::rotate(mat4(1), time, glm::normalize(vec3(0, 1, 0)));
 	t[3] = vec4(0, 0, 0, 1);
+
+	m_simpleCamera.Update(deltaTime);
 
 	ImGUIRefresher();
 
@@ -133,17 +137,22 @@ void GraphicsApp::draw() {
 	clearScreen();
 
 	// update perspective based on screen size
-	m_projectionMatrix = glm::perspective(glm::pi<float>() * 0.25f, 
-		getWindowWidth() / (float)getWindowHeight(), 0.1f, 1000.0f);
+	
+	m_viewMatrix = m_simpleCamera.GetViewMatrix();
+	//glm::lookAt(vec3(15), vec3(0), vec3(0, 1, 0));
+	m_projectionMatrix = m_simpleCamera.GetProjectionMatrix(getWindowWidth(), getWindowHeight());
+	//glm::perspective(glm::pi<float>() * 0.25f, 16.0f / 9.0f, 0.1f, 1000.0f);
 
 	auto pv = m_projectionMatrix * m_viewMatrix;
 	//draw the quad in QuadLoader()
 	QuadDraw(pv * m_quadTransform);
 
+	BoxDraw(pv * m_boxTransform);
+
 	//draw the bunny setup in BunnyLoader()
 	//BunnyDraw(pv * m_bunnyTransform);
 
-	PhongDraw(pv * m_bunnyTransform, m_bunnyTransform);
+//	PhongDraw(pv * m_bunnyTransform, m_bunnyTransform);
 
 	Gizmos::draw(m_projectionMatrix * m_viewMatrix);
 }
@@ -174,28 +183,142 @@ bool GraphicsApp::QuadLoader()
 		return false;
 	}
 
-	// Defined as 4 vertices for the 2 triangles
-	Mesh::Vertex vertices[4];
-	vertices[0].position = { -0.5f, 0, 0.5f, 1, };
-	vertices[1].position = { 0.5,  0, 0.5f, 1, };
-	vertices[2].position = { -0.5f, 0, -0.5f, 1, };
-	vertices[3].position = { 0.5f, 0, -0.5f, 1, };
+	//// Defined as 4 vertices for the 2 triangles
+	//Mesh::Vertex vertices[4];
+    //vertices[0].position = { -0.5f, 0, 0.5f, 1, };
+    //vertices[1].position = { 0.5,  0, 0.5f, 1, };
+    //vertices[2].position = { -0.5f, 0, -0.5f, 1, };
+    //vertices[3].position = { 0.5f, 0, -0.5f, 1, };
+	//
+    //unsigned int indices[6] = { 0, 1, 2 ,2, 1, 3 };
+	//
+    //m_quadMesh.Initialise(4, vertices, 6, indices);
 
-	unsigned int indices[6] = { 0, 1, 2 ,2, 1, 3 };
 
-	m_quadMesh.Initialise(4, vertices, 6, indices);
+	Mesh::Vertex vertices[8];
+	vertices[0].position = { .5f, 0, .5f, 1, };
+	vertices[1].position = { .5,  0, -.5f, 1, };
+	vertices[2].position = { -.5f, 0, .5f, 1, };
+	vertices[3].position = { -.5f, 0, -.5f, 1, };
+
+	vertices[4].position = { .5f, 1, .5f, 1, };
+	vertices[5].position = { .5f, 1, -.5f, 1, };
+
+	vertices[6].position = { -.5f, 1, .5f, 1, };
+	vertices[7].position = { -.5f, 1, -.5f, 1, };
+
+	unsigned int indices[36] = {
+		0, 1, 2, 2, 1, 3, // bottom 
+		4, 0, 6, 6, 0, 2, // right
+		7, 5, 6, 6, 5, 4, // top
+		3, 1, 7, 7, 1, 5, // left
+		4, 5, 0, 0, 5, 1, // front 
+		3, 7, 2, 2, 7, 6 }; // 
+
+	m_quadMesh.Initialise(8, vertices, 36, indices);
+
+
+	//Mesh::Vertex vertices[8];
+	//vertices[0].position = { .5f, 0, .5f, 1, };
+	//vertices[1].position = { .5,  0, -.5f, 1, };
+	//vertices[2].position = { -.5f, 0, .5f, 1, };
+	//vertices[3].position = { -.5f, 0, -.5f, 1, };
+	//
+	//vertices[4].position = { .5f, 1, .5f, 1, };
+	//vertices[5].position = { .5f, 1, -.5f, 1, };
+	//
+	//vertices[6].position = { -.5f, 1, .5f, 1, };
+	//vertices[7].position = { -.5f, 1, -.5f, 1, };
+	//
+	//unsigned int indices[36] = {
+	//	0, 1, 2, 
+	//	2, 1, 3, // bottom 
+	//	4, 0, 6, 
+	//	6, 0, 2, // right
+	//	7, 5, 6, 
+	//	6, 5, 4, // top
+	//	3, 1, 7, 
+	//	7, 1, 5, // left
+	//	4, 5, 0, 
+	//	0, 5, 1, // front 
+	//	3, 7, 2, 
+	//	2, 7, 6 }; // 
+	//
+	//m_quadMesh.Initialise(8, vertices, 36, indices);
 
 	//m_quadMesh.InitialiseQuad();
 
 	// this is a 10 'unit' wide quad
 	m_quadTransform = {
-		10, 0, 0, 0,
-		0, 10, 0, 0,
-		0, 0, 10, 0,
+		5, 0, 0, 0,
+		0, 5, 0, 0,
+		0, 0, 5, 0,
 		0, 0, 0,  1
 	};
 
 	return true;
+}
+
+bool GraphicsApp::BoxLoader()
+{
+	m_simpleShader.loadShader(aie::eShaderStage::VERTEX,
+		"./shaders/simple.vert");
+	m_simpleShader.loadShader(aie::eShaderStage::FRAGMENT,
+		"./shaders/simple.frag");
+
+	if (m_simpleShader.link() == false)
+	{
+		printf("Simple Shader has an Error: %s\n", m_simpleShader.getLastError());
+		return false;
+	}
+
+	Mesh::Vertex vertices[8];
+	vertices[0].position = { .5f, 0, .5f, 1, };
+	vertices[1].position = { .5,  0, -.5f, 1, };
+	vertices[2].position = { -.5f, 0, .5f, 1, };
+	vertices[3].position = { -.5f, 0, -.5f, 1, };
+
+	vertices[4].position = { .5f, 1, .5f, 1, };
+	vertices[5].position = { .5f, 1, -.5f, 1, };
+
+	vertices[6].position = { -.5f, 1, .5f, 1, };
+	vertices[7].position = { -.5f, 1, -.5f, 1, };
+
+	unsigned int indices[36] = {
+		0, 1, 2, 2, 1, 3, // bottom 
+		4, 0, 6, 6, 0, 2, // right
+		7, 5, 6, 6, 5, 4, // top
+		3, 1, 7, 7, 1, 5, // left
+		4, 5, 0, 0, 5, 1, // front 
+		3, 7, 2, 2, 7, 6 }; // 
+
+	m_boxMesh.Initialise(8, vertices, 36, indices);
+
+	//m_quadMesh.InitialiseQuad();
+
+	// this is a 10 'unit' wide quad
+	m_boxTransform = {
+		5, 0, 0, 0,
+		0, 5, 0, 0,
+		0, 0, 5, 0,
+		0, 0, 0,  1
+	};
+
+
+	return true;
+}
+
+void GraphicsApp::BoxDraw(glm::mat4 pvm)
+{
+	//Bind the shader
+	m_simpleShader.bind();
+
+	// Bind the transform
+	m_simpleShader.bindUniform("ProjectionViewModel", pvm);
+
+	//Draw the box using Mesh's draw
+	m_boxMesh.Draw();
+
 }
 
 void GraphicsApp::QuadDraw(glm::mat4 pvm)
@@ -285,11 +408,17 @@ void GraphicsApp::ImGUIRefresher()
 	ImGui::Begin("Light Settings");
 
 
-	ImGui::Checkbox("Toggle Color", &toggleColor);
-	if (toggleColor)
-	{
-		ImGui::ColorEdit4("Change Color", &m_light.color[0]);
-	}
+	ImGui::ColorEdit4("Change Color", &m_light.color[0]);
+	//ImGui::Checkbox("Toggle Color", &toggleColor);
+	//if (toggleColor)
+	//{
+	//}
+
+	ImGui::End();
+
+	ImGui::Begin("Light Direction");
+
+	ImGui::ColorEdit4("Color", &m_light.direction[0]);
 
 	ImGui::End();
 }

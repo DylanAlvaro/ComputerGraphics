@@ -19,6 +19,12 @@
     <Filter Include="Source Files\Provided">
       <UniqueIdentifier>{36bab657-e794-4d16-bde4-f6554ed5fc5e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Cameras">
+      <UniqueIdentifier>{34126d49-0cb3-41d8-bbda-b1eae495cca0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Cameras">
+      <UniqueIdentifier>{8de02606-8f60-4fb2-bc15-eedc6a8bc229}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -42,6 +48,18 @@
     <ClCompile Include="Planets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SimpleCamera.cpp">
+      <Filter>Source Files\Cameras</Filter>
+    </ClCompile>
+    <ClCompile Include="OribitalCamera.cpp">
+      <Filter>Source Files\Cameras</Filter>
+    </ClCompile>
+    <ClCompile Include="FlyCamera.cpp">
+      <Filter>Source Files\Cameras</Filter>
+    </ClCompile>
+    <ClCompile Include="StationaryCamera.cpp">
+      <Filter>Source Files\Cameras</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GraphicsApp.h">
@@ -64,6 +82,18 @@
     </ClInclude>
     <ClInclude Include="Planets.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OribitalCamera.h">
+      <Filter>Header Files\Cameras</Filter>
+    </ClInclude>
+    <ClInclude Include="SimpleCamera.h">
+      <Filter>Header Files\Cameras</Filter>
+    </ClInclude>
+    <ClInclude Include="StationaryCamera.h">
+      <Filter>Header Files\Cameras</Filter>
+    </ClInclude>
+    <ClInclude Include="FlyCamera.h">
+      <Filter>Header Files\Cameras</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
