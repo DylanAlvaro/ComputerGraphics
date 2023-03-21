@@ -30,17 +30,19 @@ bool GraphicsApp::startup() {
 	//m_viewMatrix = glm::lookAt(vec3(15), vec3(0), vec3(0, 1, 0));
 	//m_projectionMatrix = glm::perspective(glm::pi<float>() * 0.25f, 16.0f / 9.0f, 0.1f, 1000.0f);
 
-	m_light.color = { 1, 1, 1 };
+	Light light;
+
+	light.color = { 1, 1, 1 };
 	m_ambientLight = { 0.5, 0.5, 0.5 };
 
 
-	m_light.direction = glm::normalize(glm::vec3(glm::cos(time * 2), glm::sin(time * 2), 0));
 	return LaunchShaders();
 }
 
 void GraphicsApp::shutdown() {
 
 	Gizmos::destroy();
+	delete m_scene;
 }
 
 void GraphicsApp::update(float deltaTime) {
@@ -50,16 +52,16 @@ void GraphicsApp::update(float deltaTime) {
 	Gizmos::clear();
 
 	 //draw a simple grid with gizmos
-	//vec4 white(0);
-	//vec4 black(0, 0, 0, 1);
-	//for (int i = 0; i < 21; ++i) {
-	//	Gizmos::addLine(vec3(-10 + i, 0, 10),
-	//					vec3(-10 + i, 0, -10),
-	//					i == 10 ? white : black);
-	//	Gizmos::addLine(vec3(10, 0, -10 + i),
-	//					vec3(-10, 0, -10 + i),
-	//					i == 10 ? white : black);
-	//}
+	vec4 white(0);
+	vec4 black(0, 0, 0, 1);
+	for (int i = 0; i < 21; ++i) {
+		Gizmos::addLine(vec3(-10 + i, 0, 10),
+						vec3(-10 + i, 0, -10),
+						i == 10 ? white : black);
+		Gizmos::addLine(vec3(10, 0, -10 + i),
+						vec3(-10, 0, -10 + i),
+						i == 10 ? white : black);
+	}
 
 	// add a transform so that we can see the axis
 	Gizmos::addTransform(mat4(0));
@@ -73,12 +75,26 @@ void GraphicsApp::update(float deltaTime) {
 
 	// rotate the light to emulate a 'day/night' cycle
 	
+	//m_light.direction = glm::normalize(glm::vec3(glm::cos(time * 2), glm::sin(time * 2), 0));
+
+	m_scene->GetLight()->direction = glm::normalize(glm::vec3(glm::cos(time * 2), glm::sin(time * 2), 0));
 
 	//m_quadTransform = glm::rotate(m_quadTransform, .02f, glm::vec3(0, 1, 0));
 
 	mat4 t = glm::rotate(mat4(1), time, glm::normalize(vec3(0, 1, 0)));
 	t[3] = vec4(0, 0, 0, 1);
 
+	if (toggleFlyCam)
+		SetFlyCamera();
+
+	if (toggleStationaryCam)
+		SetStationaryCamera();
+
+	if (toggleOribtalCam)
+		SetOribtalCamera();
+
+	if (toggleSimpleCam)
+		SetSimpleCamera();
 
 
 	//m_simpleCamera.Update(deltaTime);
@@ -99,33 +115,31 @@ void GraphicsApp::draw() {
 
 	// update perspective based on screen size
 	
-	if (toggleFlyCam)
-		SetFlyCamera();
-	
-	if (toggleStationaryCam)
-		SetStationaryCamera();
-	
-	if (toggleOribtalCam)
-		SetOribtalCamera();
-	
-	if (toggleSimpleCam)
-		SetSimpleCamera();
-
 	//glm::perspective(glm::pi<float>() * 0.25f, 16.0f / 9.0f, 0.1f, 1000.0f);
 
 	auto pv = m_projectionMatrix * m_viewMatrix;
+
+	m_scene->Draw();
+
 	//draw the quad in QuadLoader()
 
-	//if (toggleBox)
+	if (toggleBox)
+		QuadDraw(pv * m_boxTransform);
+	if (toggleGrid)
 		//QuadDraw(pv * m_quadTransform);
 		QuadTextureDraw(pv * m_quadTransform);
 
-	BoxDraw(pv * m_boxTransform);
 
 	//draw the bunny setup in BunnyLoader()
 	//BunnyDraw(pv * m_bunnyTransform);
+	if(toggleSpear)
+		ObjDraw(pv, m_spearTransform, &m_spearMesh);
+	//PhongDraw(pv * m_bananaTransform, m_bananaTransform);
 
-//	PhongDraw(pv * m_bunnyTransform, m_bunnyTransform);
+	if(toggleBanana)
+	ObjDraw(pv, m_bananaTransform, &m_bananaMesh);
+	//BananaDraw(pv * m_bananaTransform);
+
 
 	Gizmos::draw(m_projectionMatrix * m_viewMatrix);
 }
@@ -133,9 +147,20 @@ void GraphicsApp::draw() {
 
 bool GraphicsApp::LaunchShaders()
 {
+	m_normalLitShader.loadShader(aie::eShaderStage::VERTEX,
+		"./shaders/normalLit.vert");
+	m_normalLitShader.loadShader(aie::eShaderStage::FRAGMENT,
+		"./shaders/normalLit.frag");
+
+	if (m_normalLitShader.link() == false)
+	{
+		printf("Normal Lit Phong Shader Error: %s\n ", m_normalLitShader.getLastError());
+		return false;
+	}
+
 	// used for loading in a simple quad
-	//if (!QuadLoader())
-	//	return false;
+	if (!QuadLoader())
+		return false;
 	// used for loading in an OBJ bunny
 	if (!BunnyLoader())
 		return false;
@@ -143,6 +168,24 @@ bool GraphicsApp::LaunchShaders()
 	// Used for loading a texure on our quad
 	if (!QuadTextureLoader())
 		return false;
+
+	// used for loading an OBJ spear
+	//if (!SpearLoader())
+	//	return false;
+	//
+	////used for loading an obj banana
+	//if (!BananaLoader())
+	//	return false;
+
+	Light light;
+	light.color = { 1,1,1 };
+
+	m_scene = new Scene(&m_simpleCamera, glm::vec2(getWindowWidth(), getWindowHeight()), light, m_ambientLight);
+
+
+	for(int i = 0; i < 10; i++)
+		m_scene->AddInstance(new Instance(m_spearTransform, 
+			&m_spearMesh, &m_normalLitShader));
 
 	return true;
 }
@@ -192,7 +235,7 @@ bool GraphicsApp::QuadLoader()
 		4, 5, 0, 0, 5, 1, // front 
 		3, 7, 2, 2, 7, 6 }; // 
 
-	m_quadMesh.Initialise(8, vertices, 36, indices);
+	m_boxMesh.Initialise(8, vertices, 36, indices);
 
 
 	//Mesh::Vertex vertices[8];
@@ -226,54 +269,6 @@ bool GraphicsApp::QuadLoader()
 	//m_quadMesh.InitialiseQuad();
 
 	// this is a 10 'unit' wide quad
-	m_quadTransform = {
-		5, 0, 0, 0,
-		0, 5, 0, 0,
-		0, 0, 5, 0,
-		0, 0, 0,  1
-	};
-
-	return true;
-}
-
-bool GraphicsApp::BoxLoader()
-{
-	m_simpleShader.loadShader(aie::eShaderStage::VERTEX,
-		"./shaders/simple.vert");
-	m_simpleShader.loadShader(aie::eShaderStage::FRAGMENT,
-		"./shaders/simple.frag");
-
-	if (m_simpleShader.link() == false)
-	{
-		printf("Simple Shader has an Error: %s\n", m_simpleShader.getLastError());
-		return false;
-	}
-
-	Mesh::Vertex vertices[8];
-	vertices[0].position = { .5f, 0, .5f, 1, };
-	vertices[1].position = { .5,  0, -.5f, 1, };
-	vertices[2].position = { -.5f, 0, .5f, 1, };
-	vertices[3].position = { -.5f, 0, -.5f, 1, };
-
-	vertices[4].position = { .5f, 1, .5f, 1, };
-	vertices[5].position = { .5f, 1, -.5f, 1, };
-
-	vertices[6].position = { -.5f, 1, .5f, 1, };
-	vertices[7].position = { -.5f, 1, -.5f, 1, };
-
-	unsigned int indices[36] = {
-		0, 1, 2, 2, 1, 3, // bottom 
-		4, 0, 6, 6, 0, 2, // right
-		7, 5, 6, 6, 5, 4, // top
-		3, 1, 7, 7, 1, 5, // left
-		4, 5, 0, 0, 5, 1, // front 
-		3, 7, 2, 2, 7, 6 }; // 
-
-	m_boxMesh.Initialise(8, vertices, 36, indices);
-
-	//m_quadMesh.InitialiseQuad();
-
-	// this is a 10 'unit' wide quad
 	m_boxTransform = {
 		5, 0, 0, 0,
 		0, 5, 0, 0,
@@ -281,21 +276,7 @@ bool GraphicsApp::BoxLoader()
 		0, 0, 0,  1
 	};
 
-
 	return true;
-}
-
-void GraphicsApp::BoxDraw(glm::mat4 pvm)
-{
-	//Bind the shader
-	m_simpleShader.bind();
-
-	// Bind the transform
-	m_simpleShader.bindUniform("ProjectionViewModel", pvm);
-
-	//Draw the box using Mesh's draw
-	m_boxMesh.Draw();
-
 }
 
 void GraphicsApp::QuadDraw(glm::mat4 pvm)
@@ -307,7 +288,7 @@ void GraphicsApp::QuadDraw(glm::mat4 pvm)
 	m_simpleShader.bindUniform("ProjectionViewModel", pvm);
 
 	//Draw the quad using Mesh's draw
-	m_quadMesh.Draw();
+	m_boxMesh.Draw();
 
 }
 
@@ -356,6 +337,77 @@ void GraphicsApp::BunnyDraw(glm::mat4 pvm)
 	m_bunnyMesh.draw();
 }
 
+bool GraphicsApp::SpearLoader()
+{
+	if (m_spearMesh.load("./soulspear/soulspear.obj", true, true) == false)
+	{
+		printf("Soulspear Mesh Error!\n");
+		return false;
+	}
+
+	m_spearTransform = {
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0,  1
+	};
+
+	return true;
+}
+
+void GraphicsApp::ObjDraw(glm::mat4 pv, glm::mat4 transform, aie::OBJMesh* objMesh)
+{
+	m_normalLitShader.bind();
+
+	m_normalLitShader.bindUniform("CameraPosition",
+		glm::vec3(glm::inverse(m_viewMatrix)[3]));
+
+	//bind the directional light  we defined
+	m_normalLitShader.bindUniform("LightDirection", m_light.direction);
+	m_normalLitShader.bindUniform("LightColor", m_light.color);
+	m_normalLitShader.bindUniform("AmbientColor", m_ambientLight);
+
+	// bind the texture location
+	m_normalLitShader.bindUniform("diffuseTexture", 0);
+
+	//bind the pvm using the one provided
+
+	m_normalLitShader.bindUniform("ProjectionViewModel", pv * transform);
+
+	m_normalLitShader.bindUniform("ModelMatrix", transform);
+
+	objMesh->draw();
+}
+
+bool GraphicsApp::BananaLoader()
+{
+	if (m_bananaMesh.load("./startrek/Cube.obj", true, true) == false)
+	{
+		printf("pistol Mesh Error!\n");
+		return false;
+	}
+
+	m_bananaTransform = {
+		.25f, 0, 0, 0,
+		0, .25f, 0, 0,
+		0, 0, .25f, 0,
+		0, 0, 0,  1
+	};
+
+	return true;
+}
+
+void GraphicsApp::BananaDraw(glm::mat4 pvm)
+{
+	m_colorShader.bind();
+
+	m_colorShader.bindUniform("ProjectionViewModel", pvm);
+
+	m_colorShader.bindUniform("BaseColor", glm::vec4(1));
+
+	m_bananaMesh.draw();
+}
+
 bool GraphicsApp::QuadTextureLoader()
 {
 	m_texturedShader.loadShader(aie::eShaderStage::VERTEX,
@@ -384,7 +436,7 @@ bool GraphicsApp::QuadTextureLoader()
 		0, 0, 0,  1
 	};
 
-	return false;
+	return true;
 }
 
 void GraphicsApp::QuadTextureDraw(glm::mat4 pvm)
@@ -426,14 +478,15 @@ void GraphicsApp::PhongDraw(glm::mat4 pvm, glm::mat4 transform)
 	m_phongShader.bindUniform("ModelMatrix", transform);
 
 	//draw the phong lightning
-	m_bunnyMesh.draw();
+	m_spearMesh.draw();
 }
 
 void GraphicsApp::ImGUIRefresher()
 {
 	ImGui::Begin("Light Settings");
 
-	ImGui::ColorEdit4("Change Color", &m_light.color[0]);
+	ImGui::DragFloat3("global light color", &m_light.color[0], 0.1, 0, 1);
+	ImGui::DragFloat3("global light direction", &m_light.direction[0], 0.1, 0, 1);
 
 	ImGui::End();
 
@@ -516,10 +569,11 @@ void GraphicsApp::ImGUIShapes()
 	ImGui::Checkbox("Sphere", &toggleSphere);
 	ImGui::Checkbox("Cone", &toggleCone);
 	ImGui::Checkbox("Grid", &toggleGrid);
+	ImGui::Checkbox("Spear", &toggleSpear);
+	ImGui::Checkbox("Banana", &toggleBanana);
 
 	ImGui::End();
 }
-
 
 
 void GraphicsApp::SetFlyCamera()
@@ -527,19 +581,16 @@ void GraphicsApp::SetFlyCamera()
 	m_viewMatrix = m_flyCam.GetViewMatrix();
 	m_projectionMatrix = m_flyCam.GetProjectionMatrix(getWindowWidth(), getWindowHeight());
 }
-
 void GraphicsApp::SetOribtalCamera()
 {
 	m_viewMatrix = m_oribtalCam.GetViewMatrix();
 	m_projectionMatrix = m_oribtalCam.GetProjectionMatrix(getWindowWidth(), getWindowHeight());
 }
-
 void GraphicsApp::SetStationaryCamera()
 {
 	m_viewMatrix = m_stationaryCam.GetViewMatrix();
 	m_projectionMatrix = m_stationaryCam.GetProjectionMatrix(getWindowWidth(), getWindowHeight());
 }
-
 void GraphicsApp::SetSimpleCamera()
 {
 	m_viewMatrix = glm::lookAt(vec3(15), vec3(0), vec3(0, 1, 0));
