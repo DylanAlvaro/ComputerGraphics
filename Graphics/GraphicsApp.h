@@ -11,6 +11,7 @@
 #include "OribitalCamera.h"
 #include "Scene.h"
 #include "Instance.h"
+#include "RenderTarget.h"
 
 class GraphicsApp : public aie::Application {
 public:
@@ -79,7 +80,9 @@ protected:
 	aie::ShaderProgram   m_colorShader;
 	aie::ShaderProgram   m_texturedShader;
 	aie::ShaderProgram   m_phongShader;
-	aie::ShaderProgram m_normalLitShader;
+	aie::ShaderProgram   m_normalLitShader;
+
+	aie::RenderTarget   m_renderTarget;
 
 	Mesh                 m_quadMesh;
 	glm::mat4            m_quadTransform;
@@ -96,8 +99,8 @@ protected:
 	aie::OBJMesh         m_dragonMesh;
 	glm::mat4            m_dragonTransform;
 
-	aie::OBJMesh         m_travellerMesh;
-	glm::mat4            m_travellerTransform;
+	aie::OBJMesh         m_gunMesh;
+	glm::mat4            m_gunTransform;
 	
 	Mesh                 m_pyramidMesh;
 	glm::mat4            m_pyramidTransform;
@@ -138,7 +141,7 @@ protected:
 	bool toggleGrid = false;
 	bool toggleSpear = false;
 	bool toggleDragon = false;
-	bool toggleTraveller = false;
+	bool toggleGun = false;
 
 
 	glm::vec3 SimpleCamPos = { 0, 0, 0 };

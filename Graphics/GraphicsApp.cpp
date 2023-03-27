@@ -113,18 +113,24 @@ void GraphicsApp::update(float deltaTime) {
 
 }
 
-void GraphicsApp::draw() {
+void GraphicsApp::draw() 
+{
+	//Bind the render target as the first part of our draw function 
+	m_renderTarget.bind();
 
 	// wipe the screen to the background colour
 	clearScreen();
 
 	// update perspective based on screen size
-	
 	//glm::perspective(glm::pi<float>() * 0.25f, 16.0f / 9.0f, 0.1f, 1000.0f);
 
 	auto pv = m_projectionMatrix * m_viewMatrix;
 
+	m_scene->Draw();
 
+	m_renderTarget.unbind();
+	
+	clearScreen();
 	//draw the quad in QuadLoader()
 
 	if (toggleBox)
@@ -133,14 +139,17 @@ void GraphicsApp::draw() {
 	if (togglePyramid)
 		TriangleDraw(pv * m_pyramidTransform);
 
-	if (toggleGrid)
+	//if (toggleGrid)
 		//QuadDraw(pv * m_quadTransform);
 		QuadTextureDraw(pv * m_quadTransform);
 
-	m_scene->Draw();
+
+	// Unbind the target to return to the back buffer
+
 
 	//draw the bunny setup in BunnyLoader()
 	//BunnyDraw(pv * m_bunnyTransform);
+	
 	if (toggleSpear)
 		for (int i = 0; i < 10; i++)
 			m_scene->AddInstance(new Instance(glm::vec3(i * 2, 0, 0),
@@ -151,9 +160,10 @@ void GraphicsApp::draw() {
 		PhongDraw(pv * m_dragonTransform, m_dragonTransform);
 		//ObjDraw(pv, m_dragonTransform, &m_dragonMesh);
 
-	if (toggleTraveller)
-		ObjDraw(pv, m_travellerTransform, &m_travellerMesh);
-	//BananaDraw(pv * m_bananaTransform);
+	if (toggleGun)
+		ObjDraw(pv, m_gunTransform, &m_gunMesh);
+
+	
 
 
 	Gizmos::draw(m_projectionMatrix * m_viewMatrix);
@@ -162,6 +172,13 @@ void GraphicsApp::draw() {
 
 bool GraphicsApp::LaunchShaders()
 {
+
+	if (m_renderTarget.initialise(1, getWindowWidth(), getWindowHeight()) == false)
+	{
+		printf("Render Target Error!\n");
+		return false;
+	}
+
 	m_normalLitShader.loadShader(aie::eShaderStage::VERTEX,
 		"./shaders/normalLit.vert");
 	m_normalLitShader.loadShader(aie::eShaderStage::FRAGMENT,
@@ -193,16 +210,10 @@ bool GraphicsApp::LaunchShaders()
 
 	if (!TriangleLoader())
 		return false;
-	
+
 	////used for loading an obj dragon
 	if (!DragonLoader())
 		return false;
-
-	//Light light;
-	//light.color = { 1,1,1 };
-
-
-
 
 	return true;
 }
@@ -419,13 +430,13 @@ void GraphicsApp::DragonDraw(glm::mat4 pvm)
 
 bool GraphicsApp::GunLoader()
 {
-	if (m_travellerMesh.load("./traveller/M1887.obj", true, true) == false)
+	if (m_gunMesh.load("./traveller/M1887.obj", true, true) == false)
 	{
 		printf("traveller Mesh Error!\n");
 		return false;
 	}
 
-	m_travellerTransform = {
+	m_gunTransform = {
 		5, 0, 0, 0,
 		0, 5, 0, 0,
 		0, 0, 5, 0,
@@ -442,7 +453,7 @@ void GraphicsApp::GunDraw(glm::mat4 pvm)
 	
 	m_colorShader.bindUniform("BaseColor", glm::vec4(1));
 	
-	m_travellerMesh.draw();
+	m_gunMesh.draw();
 }
 
 bool GraphicsApp::TriangleLoader()
@@ -553,7 +564,9 @@ void GraphicsApp::QuadTextureDraw(glm::mat4 pvm)
 	m_texturedShader.bindUniform("diffuseTexture", 0);
 
 	// Bind the texture to a specific location
-	m_gridTexture.bind(0);
+//	m_gridTexture.bind(0);
+
+	m_renderTarget.getTarget(0).bind(0);
 
 	//Draw the quad using Mesh's draw
 	m_quadMesh.Draw();
@@ -681,6 +694,7 @@ void GraphicsApp::ImGUIShapes()
 	ImGui::Checkbox("Cone", &toggleCone);
 	ImGui::Checkbox("Grid", &toggleGrid);
 	ImGui::Checkbox("Dragon", &toggleDragon);
+	ImGui::Checkbox("Gun", &toggleGun);
 
 	if(ImGui::CollapsingHeader("spear"))
 	{ 
@@ -706,7 +720,6 @@ void GraphicsApp::ImGUIModels()
 
 	if (ImGui::CollapsingHeader("Gun"))
 	{
-		ImGui::Checkbox("Gun", &toggleTraveller);
 	}
 
 	ImGui::End();
@@ -717,21 +730,25 @@ void GraphicsApp::SetFlyCamera()
 {
 	m_viewMatrix = m_flyCam.GetViewMatrix();
 	m_projectionMatrix = m_flyCam.GetProjectionMatrix(getWindowWidth(), getWindowHeight());
+	m_scene->SetCamera(&m_flyCam);
 }
 void GraphicsApp::SetOribtalCamera()
 {
 	m_viewMatrix = m_oribtalCam.GetViewMatrix();
 	m_projectionMatrix = m_oribtalCam.GetProjectionMatrix(getWindowWidth(), getWindowHeight());
+	m_scene->SetCamera(&m_flyCam);
 }
 void GraphicsApp::SetStationaryCamera()
 {
 	m_viewMatrix = m_stationaryCam.GetViewMatrix();
 	m_projectionMatrix = m_stationaryCam.GetProjectionMatrix(getWindowWidth(), getWindowHeight());
+	m_scene->SetCamera(&m_flyCam);
 }
 void GraphicsApp::SetSimpleCamera()
 {
 	m_viewMatrix = glm::lookAt(vec3(15), vec3(0), vec3(0, 1, 0));
 	m_projectionMatrix = glm::perspective(glm::pi<float>() * 0.25f, 16.0f / 9.0f, 0.1f, 1000.0f);
+	m_scene->SetCamera(&m_flyCam);
 }
 
 
