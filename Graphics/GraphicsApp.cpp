@@ -30,6 +30,7 @@ bool GraphicsApp::startup() {
 	//m_viewMatrix = glm::lookAt(vec3(15), vec3(0), vec3(0, 1, 0));
 	//m_projectionMatrix = glm::perspective(glm::pi<float>() * 0.25f, 16.0f / 9.0f, 0.1f, 1000.0f);
 
+
 	Light light;
 
 	light.color = { 1, 1, 1 };
@@ -128,6 +129,8 @@ void GraphicsApp::draw()
 
 	m_scene->Draw();
 
+	Gizmos::draw(m_projectionMatrix * m_viewMatrix);
+
 	m_renderTarget.unbind();
 	
 	clearScreen();
@@ -141,7 +144,16 @@ void GraphicsApp::draw()
 
 	//if (toggleGrid)
 		//QuadDraw(pv * m_quadTransform);
-		QuadTextureDraw(pv * m_quadTransform);
+		//QuadTextureDraw(pv * m_quadTransform);
+		//m_scene->Draw();
+
+	// Bind the post process shader and the texture
+	m_postProcessShader.bind();
+	m_postProcessShader.bindUniform("colorTarget", 0);
+	m_postProcessShader.bindUniform("postProcessTarget", m_postProccessEffect);
+	m_renderTarget.getTarget(0).bind(0);
+
+	m_fullScreenQuad.Draw();
 
 
 	// Unbind the target to return to the back buffer
@@ -163,10 +175,7 @@ void GraphicsApp::draw()
 	if (toggleGun)
 		ObjDraw(pv, m_gunTransform, &m_gunMesh);
 
-	
 
-
-	Gizmos::draw(m_projectionMatrix * m_viewMatrix);
 }
 
 
@@ -179,6 +188,7 @@ bool GraphicsApp::LaunchShaders()
 		return false;
 	}
 
+#pragma region loadingShaders
 	m_normalLitShader.loadShader(aie::eShaderStage::VERTEX,
 		"./shaders/normalLit.vert");
 	m_normalLitShader.loadShader(aie::eShaderStage::FRAGMENT,
@@ -190,6 +200,27 @@ bool GraphicsApp::LaunchShaders()
 		return false;
 	}
 
+	// post process shader
+	m_postProcessShader.loadShader(aie::eShaderStage::VERTEX,
+		"./shaders/post.vert");
+	m_postProcessShader.loadShader(aie::eShaderStage::FRAGMENT,
+		"./shaders/post.frag");
+
+	if (m_postProcessShader.link() == false)
+	{
+		printf("Normal Lit Phong Shader Error: %s\n ", m_postProcessShader.getLastError());
+		return false;
+	}
+#pragma endregion
+
+	// Used for loading a texure on our quad
+	if (!QuadTextureLoader())
+		return false;
+
+	// create a full screen quad
+	m_fullScreenQuad.InitialiseFullscreenQuad();
+	
+
 	// used for loading in a simple quad
 	if (!QuadLoader())
 		return false;
@@ -197,9 +228,7 @@ bool GraphicsApp::LaunchShaders()
 	if (!BunnyLoader())
 		return false;
 
-	// Used for loading a texure on our quad
-	if (!QuadTextureLoader())
-		return false;
+
 
 	// used for loading an OBJ spear
 	if (!SpearLoader())
@@ -214,6 +243,9 @@ bool GraphicsApp::LaunchShaders()
 	////used for loading an obj dragon
 	if (!DragonLoader())
 		return false;
+
+
+
 
 	return true;
 }
@@ -699,7 +731,7 @@ void GraphicsApp::ImGUIShapes()
 	if(ImGui::CollapsingHeader("spear"))
 	{ 
 		ImGui::Checkbox("Spear", &toggleSpear);
-		ImGui::DragFloat3("Change position of object", &SpearPos[0],0.1 ,-1,99);
+	//	ImGui::DragFloat3("Change position of object", &SpearPos[0],0.1 ,-1,99);
 	}
 	
 	ImGui::End();

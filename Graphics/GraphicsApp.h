@@ -54,6 +54,8 @@ protected:
 
 	void PhongDraw(glm::mat4 pvm, glm::mat4 transform);
 
+	int m_postProccessEffect = 1;
+
 	void ImGUIRefresher();
 	void ImGUIPlanets();
 	void ImGUIShapes();
@@ -81,6 +83,7 @@ protected:
 	aie::ShaderProgram   m_texturedShader;
 	aie::ShaderProgram   m_phongShader;
 	aie::ShaderProgram   m_normalLitShader;
+	aie::ShaderProgram   m_postProcessShader;
 
 	aie::RenderTarget   m_renderTarget;
 
@@ -104,6 +107,8 @@ protected:
 	
 	Mesh                 m_pyramidMesh;
 	glm::mat4            m_pyramidTransform;
+
+	Mesh                 m_fullScreenQuad;
 
 	SimpleCamera         m_simpleCamera;
 	StationaryCamera     m_stationaryCam;
@@ -145,5 +150,5 @@ protected:
 
 
 	glm::vec3 SimpleCamPos = { 0, 0, 0 };
-	glm::vec3 SpearPos = { 0, 0, 0 };
+	
 };
