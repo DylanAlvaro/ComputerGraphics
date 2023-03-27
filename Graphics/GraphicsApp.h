@@ -38,8 +38,14 @@ protected:
 	bool SpearLoader();
 	void ObjDraw(glm::mat4 pv, glm::mat4 transform, aie::OBJMesh* objMesh);
 
-	bool BananaLoader();
-	void BananaDraw(glm::mat4 pvm);
+	bool DragonLoader();
+	void DragonDraw(glm::mat4 pvm);
+
+	bool GunLoader();
+	void GunDraw(glm::mat4 pvm);
+	
+	bool TriangleLoader();
+	void TriangleDraw(glm::mat4 pvm);
 
 
 	bool QuadTextureLoader();
@@ -50,6 +56,7 @@ protected:
 	void ImGUIRefresher();
 	void ImGUIPlanets();
 	void ImGUIShapes();
+	void ImGUIModels();
 
 
 
@@ -59,6 +66,7 @@ protected:
 	void SetSimpleCamera();
 
 	Scene*               m_scene;
+	Scene*               m_shapeScene;
 
 
 	// camera transforms
@@ -85,8 +93,14 @@ protected:
 	aie::OBJMesh         m_spearMesh;
 	glm::mat4            m_spearTransform;
 	
-	aie::OBJMesh         m_bananaMesh;
-	glm::mat4            m_bananaTransform;
+	aie::OBJMesh         m_dragonMesh;
+	glm::mat4            m_dragonTransform;
+
+	aie::OBJMesh         m_travellerMesh;
+	glm::mat4            m_travellerTransform;
+	
+	Mesh                 m_pyramidMesh;
+	glm::mat4            m_pyramidTransform;
 
 	SimpleCamera         m_simpleCamera;
 	StationaryCamera     m_stationaryCam;
@@ -94,8 +108,7 @@ protected:
 	OribitalCamera       m_oribtalCam;
 
 	
-
-	Light      m_light;
+	Light m_light;
 	glm::vec3  m_ambientLight;
 
 	//cameras
@@ -106,15 +119,15 @@ protected:
 	bool toggleSimpleCam = false;
 
 	// planets
-	bool sunVisible = true;
-	bool mercuryVisible = true;
-	bool venusVisible = true;
-	bool earthVisible = true;
-	bool marsVisible = true;
-	bool jupitarVisible = true;
-	bool saturnVisible = true;
-	bool uranusVisible = true;
-	bool neptuneVisible = true;
+	bool sunVisible = false;
+	bool mercuryVisible = false;
+	bool venusVisible = false;
+	bool earthVisible = false;
+	bool marsVisible = false;
+	bool jupitarVisible = false;
+	bool saturnVisible = false;
+	bool uranusVisible = false;
+	bool neptuneVisible = false;
 
 	// shapes
 	bool toggleBox = false;
@@ -124,8 +137,10 @@ protected:
 	bool toggleCone = false;
 	bool toggleGrid = false;
 	bool toggleSpear = false;
-	bool toggleBanana = false;
+	bool toggleDragon = false;
+	bool toggleTraveller = false;
 
 
 	glm::vec3 SimpleCamPos = { 0, 0, 0 };
+	glm::vec3 SpearPos = { 0, 0, 0 };
 };

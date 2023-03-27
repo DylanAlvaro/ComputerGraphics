@@ -34,7 +34,15 @@ bool GraphicsApp::startup() {
 
 	light.color = { 1, 1, 1 };
 	m_ambientLight = { 0.5, 0.5, 0.5 };
+	light.direction = { 1,-1,1 };
 
+	//m_light.direction = glm::normalize(glm::vec3(glm::cos(time * 2), glm::sin(time * 2), 0));
+	
+	m_scene = new Scene(&m_flyCam, glm::vec2(getWindowWidth(), getWindowHeight()),
+		light, m_ambientLight);
+
+	m_scene->AddPointLights(glm::vec3(5, 3, 0), glm::vec3(1, 0, 0), 50);
+	m_scene->AddPointLights(glm::vec3(-5, 3, 0), glm::vec3(0, 0, 1), 50);
 
 	return LaunchShaders();
 }
@@ -75,10 +83,8 @@ void GraphicsApp::update(float deltaTime) {
 
 	// rotate the light to emulate a 'day/night' cycle
 	
-	//m_light.direction = glm::normalize(glm::vec3(glm::cos(time * 2), glm::sin(time * 2), 0));
 
-	m_scene->GetLight()->direction = glm::normalize(glm::vec3(glm::cos(time * 2), glm::sin(time * 2), 0));
-
+	m_flyCam.Update(deltaTime);
 	//m_quadTransform = glm::rotate(m_quadTransform, .02f, glm::vec3(0, 1, 0));
 
 	mat4 t = glm::rotate(mat4(1), time, glm::normalize(vec3(0, 1, 0)));
@@ -99,12 +105,11 @@ void GraphicsApp::update(float deltaTime) {
 
 	//m_simpleCamera.Update(deltaTime);
 
-	m_flyCam.Update(deltaTime);
 
 	ImGUIRefresher();
 	ImGUIPlanets();
 	ImGUIShapes();
-
+	ImGUIModels();
 
 }
 
@@ -119,25 +124,35 @@ void GraphicsApp::draw() {
 
 	auto pv = m_projectionMatrix * m_viewMatrix;
 
-	m_scene->Draw();
 
 	//draw the quad in QuadLoader()
 
 	if (toggleBox)
 		QuadDraw(pv * m_boxTransform);
+
+	if (togglePyramid)
+		TriangleDraw(pv * m_pyramidTransform);
+
 	if (toggleGrid)
 		//QuadDraw(pv * m_quadTransform);
 		QuadTextureDraw(pv * m_quadTransform);
 
+	m_scene->Draw();
 
 	//draw the bunny setup in BunnyLoader()
 	//BunnyDraw(pv * m_bunnyTransform);
-	if(toggleSpear)
-		ObjDraw(pv, m_spearTransform, &m_spearMesh);
-	//PhongDraw(pv * m_bananaTransform, m_bananaTransform);
+	if (toggleSpear)
+		for (int i = 0; i < 10; i++)
+			m_scene->AddInstance(new Instance(glm::vec3(i * 2, 0, 0),
+				glm::vec3(0, i * 30, 0), glm::vec3(1, 1, 1),
+				&m_spearMesh, &m_normalLitShader));
 
-	if(toggleBanana)
-	ObjDraw(pv, m_bananaTransform, &m_bananaMesh);
+	if (toggleDragon)
+		PhongDraw(pv * m_dragonTransform, m_dragonTransform);
+		//ObjDraw(pv, m_dragonTransform, &m_dragonMesh);
+
+	if (toggleTraveller)
+		ObjDraw(pv, m_travellerTransform, &m_travellerMesh);
 	//BananaDraw(pv * m_bananaTransform);
 
 
@@ -170,22 +185,24 @@ bool GraphicsApp::LaunchShaders()
 		return false;
 
 	// used for loading an OBJ spear
-	//if (!SpearLoader())
-	//	return false;
-	//
-	////used for loading an obj banana
-	//if (!BananaLoader())
-	//	return false;
+	if (!SpearLoader())
+		return false;
 
-	Light light;
-	light.color = { 1,1,1 };
+	if (!GunLoader())
+		return false;
 
-	m_scene = new Scene(&m_simpleCamera, glm::vec2(getWindowWidth(), getWindowHeight()), light, m_ambientLight);
+	if (!TriangleLoader())
+		return false;
+	
+	////used for loading an obj dragon
+	if (!DragonLoader())
+		return false;
+
+	//Light light;
+	//light.color = { 1,1,1 };
 
 
-	for(int i = 0; i < 10; i++)
-		m_scene->AddInstance(new Instance(m_spearTransform, 
-			&m_spearMesh, &m_normalLitShader));
+
 
 	return true;
 }
@@ -358,36 +375,28 @@ bool GraphicsApp::SpearLoader()
 void GraphicsApp::ObjDraw(glm::mat4 pv, glm::mat4 transform, aie::OBJMesh* objMesh)
 {
 	m_normalLitShader.bind();
-
+	// Bind the camera position    
 	m_normalLitShader.bindUniform("CameraPosition",
-		glm::vec3(glm::inverse(m_viewMatrix)[3]));
-
-	//bind the directional light  we defined
-	m_normalLitShader.bindUniform("LightDirection", m_light.direction);
-	m_normalLitShader.bindUniform("LightColor", m_light.color);
+	glm::vec3(glm::inverse(m_viewMatrix)[3]));
+	m_normalLitShader.bindUniform("LightDirection", m_scene->GetLight().direction);
+	m_normalLitShader.bindUniform("LightColor", m_scene->GetLight().color);
 	m_normalLitShader.bindUniform("AmbientColor", m_ambientLight);
-
-	// bind the texture location
 	m_normalLitShader.bindUniform("diffuseTexture", 0);
-
-	//bind the pvm using the one provided
-
 	m_normalLitShader.bindUniform("ProjectionViewModel", pv * transform);
-
 	m_normalLitShader.bindUniform("ModelMatrix", transform);
-
+	
 	objMesh->draw();
 }
 
-bool GraphicsApp::BananaLoader()
+bool GraphicsApp::DragonLoader()
 {
-	if (m_bananaMesh.load("./startrek/Cube.obj", true, true) == false)
+	if (m_dragonMesh.load("./stanford/Dragon.obj", true, true) == false)
 	{
-		printf("pistol Mesh Error!\n");
+		printf("Dragon Mesh Error!\n");
 		return false;
 	}
 
-	m_bananaTransform = {
+	m_dragonTransform = {
 		.25f, 0, 0, 0,
 		0, .25f, 0, 0,
 		0, 0, .25f, 0,
@@ -397,7 +406,7 @@ bool GraphicsApp::BananaLoader()
 	return true;
 }
 
-void GraphicsApp::BananaDraw(glm::mat4 pvm)
+void GraphicsApp::DragonDraw(glm::mat4 pvm)
 {
 	m_colorShader.bind();
 
@@ -405,7 +414,100 @@ void GraphicsApp::BananaDraw(glm::mat4 pvm)
 
 	m_colorShader.bindUniform("BaseColor", glm::vec4(1));
 
-	m_bananaMesh.draw();
+	m_dragonMesh.draw();
+}
+
+bool GraphicsApp::GunLoader()
+{
+	if (m_travellerMesh.load("./traveller/M1887.obj", true, true) == false)
+	{
+		printf("traveller Mesh Error!\n");
+		return false;
+	}
+
+	m_travellerTransform = {
+		5, 0, 0, 0,
+		0, 5, 0, 0,
+		0, 0, 5, 0,
+		0, 0, 0, 0.5f };
+
+	return true;
+}
+
+void GraphicsApp::GunDraw(glm::mat4 pvm)
+{
+	m_colorShader.bind();
+	
+	m_colorShader.bindUniform("ProjectionViewModel", pvm);
+	
+	m_colorShader.bindUniform("BaseColor", glm::vec4(1));
+	
+	m_travellerMesh.draw();
+}
+
+bool GraphicsApp::TriangleLoader()
+{
+	m_simpleShader.loadShader(aie::eShaderStage::VERTEX,
+		"./shaders/simple.vert");
+	m_simpleShader.loadShader(aie::eShaderStage::FRAGMENT,
+		"./shaders/simple.frag");
+
+	if (m_simpleShader.link() == false)
+	{
+		printf("Simple Shader has an Error: %s\n", m_simpleShader.getLastError());
+		return false;
+	}
+
+	//// Defined as 4 vertices for the 2 triangles
+	//Mesh::Vertex vertices[4];
+	//vertices[0].position = { -0.5f, 0, 0.5f, 1, };
+	//vertices[1].position = { 0.5,  0, 0.5f, 1, };
+	//vertices[2].position = { -0.5f, 0, -0.5f, 1, };
+	//vertices[3].position = { 0.5f, 0, -0.5f, 1, };
+	//
+	//unsigned int indices[6] = { 0, 1, 2 ,2, 1, 3 };
+	//
+	//m_quadMesh.Initialise(4, vertices, 6, indices);
+
+
+	Mesh::Vertex vertices[5];
+	// Bottom face    
+	vertices[0].position = { -0.5f, 0,  0.5f, 1 };
+	vertices[1].position = { 0.5f, 0,  0.5f, 1 };
+	vertices[2].position = { -0.5f, 0, -0.5f, 1 };
+	vertices[3].position = { 0.5f, 0, -0.5f, 1 };
+	// Top point    
+	vertices[4].position = { 0, 1, 0, 1 };
+	
+	unsigned int indices[18] = {
+		0,2,1,2,3,1,
+		4,2,0,4,3,2,
+		4,1,3,4,0,1 
+	};
+
+	m_pyramidMesh.Initialise(5, vertices, 18, indices);
+
+	// this is a 10 'unit' wide quad
+	m_pyramidTransform = {
+		2, 0, 0, 0,
+		0, 2, 0, 0,
+		0, 0, 2, 0,
+		0, 0, 0,  1
+	};
+
+	return true;
+}
+
+void GraphicsApp::TriangleDraw(glm::mat4 pvm)
+{
+	//Bind the shader
+	m_simpleShader.bind();
+
+	// Bind the transform
+	m_simpleShader.bindUniform("ProjectionViewModel", pvm);
+
+	//Draw the quad using Mesh's draw
+	m_pyramidMesh.Draw();
 }
 
 bool GraphicsApp::QuadTextureLoader()
@@ -468,8 +570,8 @@ void GraphicsApp::PhongDraw(glm::mat4 pvm, glm::mat4 transform)
 		glm::vec3(glm::inverse(m_viewMatrix)[3]));
 
 	//bind the directional light  we defined
-	m_phongShader.bindUniform("LightDirection", m_light.direction);
-	m_phongShader.bindUniform("LightColor", m_light.color);
+	m_phongShader.bindUniform("LightDirection", m_scene->GetLight().direction);
+	m_phongShader.bindUniform("LightColor", m_scene->GetLight().color);
 	m_phongShader.bindUniform("AmbientColor", m_ambientLight);
 	//bind the pvm using the one provided
 	m_phongShader.bindUniform("ProjectionViewModel", pvm);
@@ -478,15 +580,24 @@ void GraphicsApp::PhongDraw(glm::mat4 pvm, glm::mat4 transform)
 	m_phongShader.bindUniform("ModelMatrix", transform);
 
 	//draw the phong lightning
-	m_spearMesh.draw();
+	m_dragonMesh.draw();
 }
 
 void GraphicsApp::ImGUIRefresher()
 {
 	ImGui::Begin("Light Settings");
 
-	ImGui::DragFloat3("global light color", &m_light.color[0], 0.1, 0, 1);
-	ImGui::DragFloat3("global light direction", &m_light.direction[0], 0.1, 0, 1);
+	if (ImGui::CollapsingHeader("Basic Light"))
+	{
+		ImGui::DragFloat3("Global Light Direction", &m_light.direction[0], 0.1, -1, 1);
+		ImGui::DragFloat3("Global Light Color", &m_light.color[0], 0.1, 0, 1);
+
+	}
+	
+	if (ImGui::CollapsingHeader("More Lights"))
+	{
+		
+	}
 
 	ImGui::End();
 
@@ -499,7 +610,7 @@ void GraphicsApp::ImGUIRefresher()
 	if (ImGui::CollapsingHeader("Fly Cam"))
 	{
 		ImGui::Checkbox("Toggle Fly Cam", &toggleFlyCam);
-
+		ImGui::DragFloat3("Change Position", &SimpleCamPos[0]);
 	}
 	// Simple Cam
 	if (ImGui::CollapsingHeader("Simple Cam"))
@@ -569,8 +680,34 @@ void GraphicsApp::ImGUIShapes()
 	ImGui::Checkbox("Sphere", &toggleSphere);
 	ImGui::Checkbox("Cone", &toggleCone);
 	ImGui::Checkbox("Grid", &toggleGrid);
-	ImGui::Checkbox("Spear", &toggleSpear);
-	ImGui::Checkbox("Banana", &toggleBanana);
+	ImGui::Checkbox("Dragon", &toggleDragon);
+
+	if(ImGui::CollapsingHeader("spear"))
+	{ 
+		ImGui::Checkbox("Spear", &toggleSpear);
+		ImGui::DragFloat3("Change position of object", &SpearPos[0],0.1 ,-1,99);
+	}
+	
+	ImGui::End();
+}
+
+void GraphicsApp::ImGUIModels()
+{
+	ImGui::Begin("Custom Models");
+
+	if (ImGui::CollapsingHeader("Spear"))
+	{
+		ImGui::Checkbox("Spear", &toggleSpear);
+	}
+
+	if (ImGui::CollapsingHeader("Dragon"))
+	{
+	}
+
+	if (ImGui::CollapsingHeader("Gun"))
+	{
+		ImGui::Checkbox("Gun", &toggleTraveller);
+	}
 
 	ImGui::End();
 }
