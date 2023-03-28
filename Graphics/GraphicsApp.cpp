@@ -151,6 +151,8 @@ void GraphicsApp::draw()
 	m_postProcessShader.bind();
 	m_postProcessShader.bindUniform("colorTarget", 0);
 	m_postProcessShader.bindUniform("postProcessTarget", m_postProccessEffect);
+	m_postProcessShader.bindUniform("windowWidth", (int)getWindowWidth());
+	m_postProcessShader.bindUniform("windowHeight", (int)getWindowHeight());
 	m_renderTarget.getTarget(0).bind(0);
 
 	m_fullScreenQuad.Draw();
@@ -730,6 +732,7 @@ void GraphicsApp::ImGUIShapes()
 
 	if(ImGui::CollapsingHeader("spear"))
 	{ 
+		ImGui::InputInt("Change Post Process Effect", &m_postProccessEffect);
 		ImGui::Checkbox("Spear", &toggleSpear);
 	//	ImGui::DragFloat3("Change position of object", &SpearPos[0],0.1 ,-1,99);
 	}

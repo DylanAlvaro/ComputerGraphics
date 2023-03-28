@@ -54,7 +54,7 @@ protected:
 
 	void PhongDraw(glm::mat4 pvm, glm::mat4 transform);
 
-	int m_postProccessEffect = 1;
+	int m_postProccessEffect = 2;
 
 	void ImGUIRefresher();
 	void ImGUIPlanets();
