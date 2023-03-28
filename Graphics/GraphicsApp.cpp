@@ -37,6 +37,11 @@ bool GraphicsApp::startup() {
 	m_ambientLight = { 0.5, 0.5, 0.5 };
 	light.direction = { 1,-1,1 };
 
+	m_emitter = new ParticleEmitter();
+
+	m_emitter->Initialise(1000, 500, .1f, 1.0f, 1, 5, 1, .1f, 
+		glm::vec4(0, 0, 1, 1), glm::vec4(0, 1, 0, 1));
+
 	//m_light.direction = glm::normalize(glm::vec3(glm::cos(time * 2), glm::sin(time * 2), 0));
 	
 	m_scene = new Scene(&m_flyCam, glm::vec2(getWindowWidth(), getWindowHeight()),
@@ -84,6 +89,12 @@ void GraphicsApp::update(float deltaTime) {
 
 	// rotate the light to emulate a 'day/night' cycle
 	
+	FlyCamera* FC = &m_flyCam;
+
+	m_emitter->Update(deltaTime, FC->GetWorldTransform(
+		m_flyCam.GetPosition(), glm::vec3(0), glm::vec3(1)));
+
+
 
 	m_flyCam.Update(deltaTime);
 	//m_quadTransform = glm::rotate(m_quadTransform, .02f, glm::vec3(0, 1, 0));
@@ -129,6 +140,11 @@ void GraphicsApp::draw()
 
 	m_scene->Draw();
 
+	m_particleShader.bind();
+
+	m_particleShader.bindUniform("ProjectionViewModel", pv * m_particleEmitTransform);
+	m_emitter->Draw();
+
 	Gizmos::draw(m_projectionMatrix * m_viewMatrix);
 
 	m_renderTarget.unbind();
@@ -142,9 +158,9 @@ void GraphicsApp::draw()
 	if (togglePyramid)
 		TriangleDraw(pv * m_pyramidTransform);
 
-	//if (toggleGrid)
+	if (toggleGrid)
 		//QuadDraw(pv * m_quadTransform);
-		//QuadTextureDraw(pv * m_quadTransform);
+		QuadTextureDraw(pv * m_quadTransform);
 		//m_scene->Draw();
 
 	// Bind the post process shader and the texture
@@ -153,6 +169,7 @@ void GraphicsApp::draw()
 	m_postProcessShader.bindUniform("postProcessTarget", m_postProccessEffect);
 	m_postProcessShader.bindUniform("windowWidth", (int)getWindowWidth());
 	m_postProcessShader.bindUniform("windowHeight", (int)getWindowHeight());
+	m_postProcessShader.bindUniform("time", getTime());
 	m_renderTarget.getTarget(0).bind(0);
 
 	m_fullScreenQuad.Draw();
@@ -213,7 +230,26 @@ bool GraphicsApp::LaunchShaders()
 		printf("Normal Lit Phong Shader Error: %s\n ", m_postProcessShader.getLastError());
 		return false;
 	}
+
+	// particle shader
+	m_particleShader.loadShader(aie::eShaderStage::VERTEX,
+		"./shaders/particle.vert");
+	m_particleShader.loadShader(aie::eShaderStage::FRAGMENT,
+		"./shaders/particle.frag");
+
+	if (m_particleShader.link() == false)
+	{
+		printf("Normal Lit Phong Shader Error: %s\n ", m_particleShader.getLastError());
+		return false;
+	}
 #pragma endregion
+
+	m_particleEmitTransform = {
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0,  1
+	};
 
 	// Used for loading a texure on our quad
 	if (!QuadTextureLoader())

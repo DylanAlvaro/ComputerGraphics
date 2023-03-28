@@ -12,6 +12,7 @@
 #include "Scene.h"
 #include "Instance.h"
 #include "RenderTarget.h"
+#include "ParticleEmitter.h"
 
 class GraphicsApp : public aie::Application {
 public:
@@ -54,7 +55,7 @@ protected:
 
 	void PhongDraw(glm::mat4 pvm, glm::mat4 transform);
 
-	int m_postProccessEffect = 2;
+	int m_postProccessEffect = 0;
 
 	void ImGUIRefresher();
 	void ImGUIPlanets();
@@ -84,6 +85,7 @@ protected:
 	aie::ShaderProgram   m_phongShader;
 	aie::ShaderProgram   m_normalLitShader;
 	aie::ShaderProgram   m_postProcessShader;
+	aie::ShaderProgram   m_particleShader;
 
 	aie::RenderTarget   m_renderTarget;
 
@@ -118,6 +120,9 @@ protected:
 	
 	Light m_light;
 	glm::vec3  m_ambientLight;
+
+	ParticleEmitter* m_emitter;
+	glm::mat4 m_particleEmitTransform;
 
 	//cameras
 	bool toggleColor;
