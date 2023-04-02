@@ -146,7 +146,9 @@ void GraphicsApp::draw()
 	m_particleShader.bind();
 
 	m_particleShader.bindUniform("ProjectionViewModel", pv * m_particleEmitTransform);
-	//m_emitter->Draw();
+	
+	//if(toggleParticles)
+		m_emitter->Draw();
 
 	Gizmos::draw(m_projectionMatrix * m_viewMatrix);
 	
@@ -160,8 +162,8 @@ void GraphicsApp::draw()
 		QuadTextureDraw(pv * m_quadTransform);
 		
 	if (toggleDragon)
-		ObjDraw(pv, m_dragonTransform, &m_dragonMesh);
-		//PhongDraw(pv * m_dragonTransform, m_dragonTransform);
+		//ObjDraw(pv, m_dragonTransform, &m_dragonMesh);
+		PhongDraw(pv * m_dragonTransform, m_dragonTransform);
 
 	if (toggleGun)
 		ObjDraw(pv, m_gunTransform, &m_gunMesh);
@@ -680,7 +682,6 @@ void GraphicsApp::ImGUIRefresher()
 
 	if (ImGui::CollapsingHeader("Point Lighting"))
 	{
-		ImGui::DragFloat3("Point Light Color", &m_light.direction[0], 0.1, -1, 1);
 		ImGui::DragFloat3("Global Light Color", &m_light.color[0], 0.1, 0, 1);
 
 	}
@@ -697,7 +698,7 @@ void GraphicsApp::ImGUIRefresher()
 
 		if (ImGui::CollapsingHeader("Particle System Effects"))
 		{
-
+			//ImGui::Checkbox("Particles", &m_emitter);
 		}
 	}
 
@@ -786,7 +787,7 @@ void GraphicsApp::ImGUIShapes()
 		if (ImGui::CollapsingHeader("Change Spear"))
 		{
 			ImGui::Checkbox("Spear", &toggleSpear);
-			ImGui::DragFloat("Scale Spear", &m_spearScale);
+			ImGui::DragFloat("Scale Spear", &m_transform.scale[0], 0, 9);
 		}
 
 		if (ImGui::CollapsingHeader("Change Dragon"))
