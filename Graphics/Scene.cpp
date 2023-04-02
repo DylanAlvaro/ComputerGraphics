@@ -18,6 +18,10 @@ void Scene::AddInstance(Instance* instance)
 {
     m_instances.push_back(instance);
 }
+void Scene::RemoveInstance()
+{
+    m_instances.pop_back();
+}
 void Scene::Draw()
 {
     for (int i = 0; i < MAX_LIGHTS && i < m_pointLights.size(); i++)

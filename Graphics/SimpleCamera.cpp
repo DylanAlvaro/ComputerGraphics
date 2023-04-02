@@ -59,6 +59,7 @@ glm::mat4 SimpleCamera::GetViewMatrix()
 {
 	float thetaR = glm::radians(m_theta);
 	float phiR = glm::radians(m_phi);
+	
 	glm::vec3 forward(glm::cos(phiR) * glm::cos(thetaR), glm::sin(phiR), 
 		glm::cos(phiR) * glm::sin(thetaR));
 

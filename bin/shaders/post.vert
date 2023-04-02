@@ -6,6 +6,6 @@ out vec2 vTexCoord;
 void main()
 {
     //Generate the texture coordinates
-    vTexCoord = Position * 0.5f + 0.5f;
+    vTexCoord = Position * .5f + .5f;
     gl_Position = vec4(Position, 0, 1);
 }

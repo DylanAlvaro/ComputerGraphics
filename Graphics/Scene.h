@@ -21,12 +21,16 @@ struct Light {
     glm::vec3 direction;
     glm::vec3 color;
 };
+
+
+
 class Scene {
 public:
     Scene(SimpleCamera* camera, glm::vec2 windowSize,
         Light& light, glm::vec3 ambientLightColor);
     ~Scene();
     void AddInstance(Instance* instance);
+    void RemoveInstance();
     void Draw();
     void AddPointLights(Light light) { m_pointLights.push_back(light); }
 

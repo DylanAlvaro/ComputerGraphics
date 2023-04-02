@@ -55,18 +55,20 @@ protected:
 
 	void PhongDraw(glm::mat4 pvm, glm::mat4 transform);
 
-	int m_postProccessEffect = 0;
+	int m_postProccessEffect = -1;
 
 	void ImGUIRefresher();
 	void ImGUIPlanets();
 	void ImGUIShapes();
-	void ImGUIModels();
+	//void ImGUIModels();
+	void ImGUICamera();
 
 
-
+	void SetCamera(SimpleCamera* camera);
 	void SetFlyCamera();
 	void SetOribtalCamera();
 	void SetStationaryCamera();
+	void SetStationaryCamera1();
 	void SetSimpleCamera();
 
 	Scene*               m_scene;
@@ -152,8 +154,10 @@ protected:
 	bool toggleSpear = false;
 	bool toggleDragon = false;
 	bool toggleGun = false;
-
+	bool toggleParticles = false;
 
 	glm::vec3 SimpleCamPos = { 0, 0, 0 };
+
+	float m_spearScale = 1;
 	
 };
