@@ -92,11 +92,6 @@ glm::mat4 SimpleCamera::GetAspectRatio()
 {
 	return glm::mat4(m_aspectRatio);
 }
-
-void SimpleCamera::SetPosition(glm::vec3 position)
-{
-}
-
 void SimpleCamera::SetAspectRatio(float width, float height)
 {
 	

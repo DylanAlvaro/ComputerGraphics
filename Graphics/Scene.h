@@ -22,24 +22,24 @@ struct Light {
     glm::vec3 color;
 };
 
-//struct Transform 
-//{
-//    Transform()
-//    {
-//        position = glm::vec3(0.0f);
-//        rotation = glm::vec3(0.0f);
-//        scale = glm::vec3(1.0f);
-//    }
-//    Transform(glm::vec3 _translate, glm::vec3 _scale, glm::vec3 _rotation)
-//    {
-//        position = _translate;
-//        scale = _scale;
-//        rotation = _rotation;
-//    }
-//    glm::vec3 scale;
-//    glm::vec3 position;
-//    glm::vec3 rotation;
-//};
+struct Transform 
+{
+    Transform()
+    {
+        position = glm::vec3(0, 0, 0);
+        rotation = glm::vec3(0, 90, 0);
+        scale = glm::vec3(0, 0, 0);
+    }
+    Transform(glm::vec3 _translate, glm::vec3 _scale, glm::vec3 _rotation)
+    {
+        position = _translate;
+        scale = _scale;
+        rotation = _rotation;
+    }
+    glm::vec3 scale;
+    glm::vec3 position;
+    glm::vec3 rotation;
+};
 
 
 class Scene {
@@ -56,6 +56,10 @@ public:
     {
         m_pointLights.push_back(Light(direction, color, intensity));
     }
+
+
+    void ChangeLights(int index, glm::vec3 position, glm::vec3 color, float intensity);
+    void ChangeObj(int index, glm::vec3 position, glm::vec3 rotation, glm::vec3 scale);
     SimpleCamera* GetCamera() { return m_camera; }
     glm::vec2 GetWindowSize();
     glm::vec3 GetAmbientLightColor() { return m_ambientLightColor; }
@@ -71,6 +75,7 @@ protected:
     SimpleCamera* m_camera;
     glm::vec2 m_windowSize;
     std::vector<Light> m_pointLights;
+    std::vector<Transform> m_transformObj;
     Light m_sunLight;
     Light m_light;
     glm::vec3 m_ambientLightColor;

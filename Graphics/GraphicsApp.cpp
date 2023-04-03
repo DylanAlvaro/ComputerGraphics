@@ -20,7 +20,7 @@ GraphicsApp::~GraphicsApp() {
 
 bool GraphicsApp::startup() {
 	
-	float time = getTime();
+	//float time = getTime();
 	setBackgroundColour(0.25f, 0.25f, 0.25f);
 
 	// initialise gizmo primitive counts
@@ -34,22 +34,21 @@ bool GraphicsApp::startup() {
 	Light light;
 
 	light.color = { 1, 1, 1 };
-	m_ambientLight = { 0.5, 0.5, 0.5 };
+	m_ambientLight = { 0.5f, 0.5f, 0.5f };
 	light.direction = { 1,-1,1 };
 
 	m_emitter = new ParticleEmitter();
 
-	//if(toggleParticles)
-		m_emitter->Initialise(1000, 500, .1f, 1.0f, 1, 5, 1, .1f, 
-		glm::vec4(0, 0, 1, 1), glm::vec4(0, 1, 0, 1));
+	m_emitter->Initialise(1000, 500, .1f, 1.0f, 1, 5, 1, .1f, 
+	glm::vec4(0, 0, 1, 1), glm::vec4(0, 1, 0, 1));
 
 	//m_light.direction = glm::normalize(glm::vec3(glm::cos(time * 2), glm::sin(time * 2), 0));
 	
 	m_scene = new Scene(&m_flyCam, glm::vec2(getWindowWidth(), getWindowHeight()),
 		light, m_ambientLight);
 
-	m_scene->AddPointLights(glm::vec3(5, 3, 0), glm::vec3(1, 0, 0), 50);
-	m_scene->AddPointLights(glm::vec3(-5, 3, 0), glm::vec3(0, 0, 1), 50);
+	m_scene->AddPointLights(pointLightPos1, pointLightCol1, pointLight1Intensity);
+	m_scene->AddPointLights(pointLightPos2, pointLightCol2, pointLight2Intensity);
 
 	return LaunchShaders();
 }
@@ -106,25 +105,46 @@ void GraphicsApp::update(float deltaTime) {
 		//SetCamera(dynamic_cast<SimpleCamera*>(&m_flyCam));
 		//SetFlyCamera();
 
-	if (toggleStationaryCam)
-		SetStationaryCamera();
-		//SetCamera(dynamic_cast<SimpleCamera*>(&m_stationaryCam));
+	if (toggleStationaryCamX)
+	{
+		//m_simpleCamera = m_stationaryCam;
+		//m_simpleCamera.SetPosition(glm::vec3(-10, 0, 0));
+		//m_simpleCamera.SetRotation(0, 0);
+		SetStationaryCameraX();
+	}
 
-	//if (toggleOribtalCam)
-	//	SetOribtalCamera();
+	if (toggleStationaryCamY)
+	{
+		SetStationaryCameraY();
+	}
+
+	if (toggleStationaryCamZ)
+	{
+		SetStationaryCameraZ();
+		//m_simpleCamera = m_stationaryCam;
+		//m_simpleCamera.SetPosition(glm::vec3(0, 0, -10));
+		//m_simpleCamera.SetRotation(90, 0);
+	}
+		//SetCamera(dynamic_cast<SimpleCamera*>(&m_stationaryCam));
 
 	if (toggleSimpleCam)
 		SetSimpleCamera();
 		//SetCamera(dynamic_cast<SimpleCamera*>(&m_simpleCamera));
 
 
+	m_scene->ChangeLights(0, pointLightPos1, pointLightCol1, pointLight1Intensity);
+	m_scene->ChangeLights(1, pointLightPos2, pointLightCol2, pointLight2Intensity);
+
+	//m_scene->ChangeLights(0, glm::vec3(0), m_startColor, 50);
+
+	m_scene->ChangeObj(0, m_spearPosition, m_spearRotation, m_spearScale);
+	m_scene->ChangeObj(1, m_gunPosition, m_gunRotation, m_gunScale);
+
 	//m_simpleCamera.Update(deltaTime);
 
 
-	ImGUIRefresher();
-	//ImGUIPlanets();
+	ImGUILights();
 	ImGUIShapes();
-	//ImGUIModels();
 	ImGUICamera();
 }
 
@@ -144,13 +164,13 @@ void GraphicsApp::draw()
 	m_scene->Draw();
 
 	m_particleShader.bind();
-
 	m_particleShader.bindUniform("ProjectionViewModel", pv * m_particleEmitTransform);
 	
-	//if(toggleParticles)
-		m_emitter->Draw();
 
 	Gizmos::draw(m_projectionMatrix * m_viewMatrix);
+	
+	if(toggleParticles)
+		m_emitter->Draw();
 	
 	if (toggleBox)
 		QuadDraw(pv * m_boxTransform);
@@ -162,16 +182,31 @@ void GraphicsApp::draw()
 		QuadTextureDraw(pv * m_quadTransform);
 		
 	if (toggleDragon)
-		//ObjDraw(pv, m_dragonTransform, &m_dragonMesh);
 		PhongDraw(pv * m_dragonTransform, m_dragonTransform);
 
-	if (toggleGun)
-		ObjDraw(pv, m_gunTransform, &m_gunMesh);
+	if (toggleSpear)
+	{
+		for (int i = 0; i < 1; i++)
+			m_scene->AddInstance(new Instance(glm::vec3(i * 2, 0, 0),
+				glm::vec3(0, i * 30, 0), m_spearScale,
+				&m_spearMesh, &m_normalLitShader));
+	}
 	
+	if (toggleGun)
+	{
+			m_scene->AddInstance(new Instance(glm::vec3(0 * 2, 0, 0),
+				glm::vec3(0, 0, 0), m_gunScale,
+				&m_gunMesh, &m_normalLitShader));
+	}
+
+	//if (togglePointLightGizmos)
+	//{
+	//	Gizmos::addSphere(vec3(0), .25f, 8, 8, vec4(0.35, 0.22, 0.08, 1));
+	//}
+
 	m_renderTarget.unbind();
 	
 	clearScreen();
-	//draw the quad in QuadLoader()
 
 
 	m_scene->Draw();
@@ -187,22 +222,6 @@ void GraphicsApp::draw()
 	m_renderTarget.getTarget(0).bind(0);
 
 	m_fullScreenQuad.Draw();
-	//draw the bunny setup in BunnyLoader()
-	//BunnyDraw(pv * m_bunnyTransform);
-	
-	if (toggleSpear)
-	{
-		//ObjDraw(pv, m_spearTransform, &m_spearMesh);
-		for (int i = 0; i < 1; i++)
-			m_scene->AddInstance(new Instance(glm::vec3(i * 2, 0, 0),
-				glm::vec3(0, i * 30, 0), glm::vec3(1, 1, 1),
-				&m_spearMesh, &m_normalLitShader));
-	}
-	//else
-	//{
-	//	for (int i = 0; i < 10; i++)
-	//		m_scene->RemoveInstance();
-	//}
 }
 
 
@@ -459,8 +478,7 @@ void GraphicsApp::ObjDraw(glm::mat4 pv, glm::mat4 transform, aie::OBJMesh* objMe
 	m_normalLitShader.bind();
 	// Bind the camera position    
 
-	m_normalLitShader.bindUniform("CameraPosition",
-	glm::vec3(glm::inverse(m_viewMatrix)[3]));
+	m_normalLitShader.bindUniform("CameraPosition", glm::vec3(glm::inverse(m_viewMatrix)[3]));
 	
 	m_normalLitShader.bindUniform("LightDirection", m_scene->GetLight().direction);
 	m_normalLitShader.bindUniform("LightColor", m_scene->GetLight().color);
@@ -503,17 +521,17 @@ void GraphicsApp::DragonDraw(glm::mat4 pvm)
 
 bool GraphicsApp::GunLoader()
 {
+	m_gunTransform = {
+		10, 0, 0, 0,
+		0, 10, 0, 0,
+		0, 0, 10, 0,
+		0, 0, 0, 0.5f };
+
 	if (m_gunMesh.load("./traveller/M1887.obj", true, true) == false)
 	{
 		printf("traveller Mesh Error!\n");
 		return false;
 	}
-
-	m_gunTransform = {
-		5, 0, 0, 0,
-		0, 5, 0, 0,
-		0, 0, 5, 0,
-		0, 0, 0, 0.5f };
 
 	return true;
 }
@@ -552,7 +570,6 @@ bool GraphicsApp::TriangleLoader()
 	//unsigned int indices[6] = { 0, 1, 2 ,2, 1, 3 };
 	//
 	//m_quadMesh.Initialise(4, vertices, 6, indices);
-
 
 	Mesh::Vertex vertices[5];
 	// Bottom face    
@@ -669,20 +686,42 @@ void GraphicsApp::PhongDraw(glm::mat4 pvm, glm::mat4 transform)
 	m_dragonMesh.draw();
 }
 
-void GraphicsApp::ImGUIRefresher()
+void GraphicsApp::ChangeParticles(unsigned int _maxParticles, unsigned int _emitRate, float _lifetimeMin, float _lifeTimeMax, float _velocityMin, float _velocityMax, float _startSize, float _endSize, const glm::vec4& _startColor, const glm::vec4& _endColor)
+{
+	m_maxParticles = _maxParticles;
+	m_emitRate = 1.0 / _emitRate;
+	m_emitTimer = 0;
+	m_startColor = _startColor;
+	m_endColor = _endColor;
+	m_startSize = _startSize;
+	m_endSize = _endSize;
+	m_velocityMax = _velocityMax;
+	m_velocityMin = _velocityMin;
+	m_firstDead = 0;
+}
+
+void GraphicsApp::ImGUILights()
 {
 	ImGui::Begin("Lighting & Post-Processing Settings");
 
 	if (ImGui::CollapsingHeader("Basic Lighting"))
 	{
-		ImGui::DragFloat3("Global Light Direction", &m_light.direction[0], 0.1, -1, 1);
-		ImGui::DragFloat3("Global Light Color", &m_light.color[0], 0.1, 0, 1);
+		ImGui::DragFloat3("Global Light Direction", &lightDirection[0], 0.1, -1, 1);
+		ImGui::DragFloat3("Global Light Color", &lightColor[0], 0.1, 0, 1);
 
 	}
 
 	if (ImGui::CollapsingHeader("Point Lighting"))
 	{
-		ImGui::DragFloat3("Global Light Color", &m_light.color[0], 0.1, 0, 1);
+		ImGui::Checkbox("Gizmos", &togglePointLightGizmos);
+
+		ImGui::DragFloat3("Change Point Light 1 Pos", &pointLightPos1[0], 3, 0);
+		ImGui::DragFloat3("Change Point Light 1 Col", &pointLightCol1[0], 3, 0);
+		ImGui::DragFloat("Change Point Light 1 Intensity", &pointLight1Intensity);
+
+		ImGui::DragFloat3("Change Point Light 2 Pos", &pointLightPos2[0], 3, 0);
+		ImGui::DragFloat3("Change Point Light 2 Col", &pointLightCol2[0], 3, 0);
+		ImGui::DragFloat("Change Point Light 2 Intensity", &pointLight2Intensity);
 
 	}
 
@@ -698,7 +737,10 @@ void GraphicsApp::ImGUIRefresher()
 
 		if (ImGui::CollapsingHeader("Particle System Effects"))
 		{
-			//ImGui::Checkbox("Particles", &m_emitter);
+			ImGui::Checkbox("Particles", &toggleParticles);
+			ImGui::DragFloat("Start Size", &m_startSize);
+			ImGui::DragFloat("End Size", &m_endSize);
+			ImGui::DragFloat3("Particle Color", &m_startColor[0], 3 ,0);
 		}
 	}
 
@@ -710,20 +752,15 @@ void GraphicsApp::ImGUICamera()
 	
 	if (ImGui::CollapsingHeader("Stationary Cam"))
 	{
-		ImGui::Checkbox("Toggle Stationary Cam", &toggleStationaryCam);
-		ImGui::DragFloat3("Change Position", &SimpleCamPos[0]);
+		ImGui::Checkbox("Toggle Stationary Cam X", &toggleStationaryCamX);
+		ImGui::Checkbox("Toggle Stationary Cam Y", &toggleStationaryCamY);
+		ImGui::Checkbox("Toggle Stationary Cam Z", &toggleStationaryCamZ);
+		
 	}
 
 	if (ImGui::CollapsingHeader("Fly Cam"))
 	{
 		ImGui::Checkbox("Toggle Fly Cam", &toggleFlyCam);
-		ImGui::DragFloat3("Change Position", &SimpleCamPos[0]);
-	}
-
-	if (ImGui::CollapsingHeader("Simple Cam"))
-	{
-		ImGui::Checkbox("Toggle Simple Cam", &toggleSimpleCam);
-		ImGui::DragFloat3("Camera Position", &SimpleCamPos[0]);
 	}
 
 	ImGui::End();
@@ -786,18 +823,27 @@ void GraphicsApp::ImGUIShapes()
 	{
 		if (ImGui::CollapsingHeader("Change Spear"))
 		{
+			ImGui::DragFloat3("Spears Scale", &m_spearScale[0], 0, 3);
+			ImGui::DragFloat3("Spears Position", &m_spearPosition[0], 0, 3);
+			ImGui::DragFloat3("Spears Rotation", &m_spearRotation[0], 90, 3);
 			ImGui::Checkbox("Spear", &toggleSpear);
-			ImGui::DragFloat("Scale Spear", &m_transform.scale[0], 0, 9);
 		}
 
 		if (ImGui::CollapsingHeader("Change Dragon"))
 		{
 			ImGui::Checkbox("Dragon", &toggleDragon);
+			ImGui::DragFloat3("Dragons Position", &m_dragonPosition[0], 0, 3);
+			ImGui::DragFloat3("Dragons Rotation", &m_dragonRotation[0], 90, 3);
+			ImGui::DragFloat3("Dragons Scale", &m_dragonScale[0], 0, 3);
+
 		}
 
 		if (ImGui::CollapsingHeader("Change Gun"))
 		{
 			ImGui::Checkbox("Gun", &toggleGun);
+			ImGui::DragFloat3("Guns Position", &m_gunPosition[0], 0, 3);
+			ImGui::DragFloat3("Guns Rotation", &m_gunRotation[0], 90, 3);
+			ImGui::DragFloat3("Guns Scale", &m_gunScale[0], 0, 3);
 		}
 	}
 
@@ -826,16 +872,28 @@ void GraphicsApp::SetOribtalCamera()
 	m_projectionMatrix = m_oribtalCam.GetProjectionMatrix(getWindowWidth(), getWindowHeight());
 	//m_scene->SetCamera(&m_flyCam);
 }
-void GraphicsApp::SetStationaryCamera()
+void GraphicsApp::SetStationaryCameraX()
 {
 	m_viewMatrix = m_stationaryCam.GetViewMatrix();
 	m_projectionMatrix = m_stationaryCam.GetProjectionMatrix(getWindowWidth(), getWindowHeight());
 	//m_scene->SetCamera(&m_flyCam);
 }
-void GraphicsApp::SetStationaryCamera1()
+void GraphicsApp::SetStationaryCameraY()
 {
+	m_simpleCamera = m_stationaryCam;
+	m_simpleCamera.SetPosition(glm::vec3(0, 10, 0));
+	m_simpleCamera.SetRotation(0, -90);
+	m_scene->SetCamera(&m_simpleCamera);
 
 }
+void GraphicsApp::SetStationaryCameraZ()
+{
+	m_simpleCamera = m_stationaryCam;
+	m_simpleCamera.SetPosition(glm::vec3(0, 0, -10));
+	m_simpleCamera.SetRotation(90, 0);
+	m_scene->SetCamera(&m_simpleCamera);
+}
+
 void GraphicsApp::SetSimpleCamera()
 {
 	//m_viewMatrix = m_simpleCamera.GetViewMatrix();

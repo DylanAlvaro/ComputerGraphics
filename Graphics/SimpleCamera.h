@@ -15,7 +15,16 @@ public:
 	glm::mat4 GetProjectionViewMatrix();
 	glm::mat4 GetAspectRatio();
 
-	void SetPosition(glm::vec3 position);
+	float GetTheta() { return m_theta; }
+	float GetPhi() { return m_phi; }
+
+	virtual void SetPosition(glm::vec3 position) { m_position = position; }
+	virtual void SetRotation(float theta, float phi)
+	{
+		m_theta = theta;
+		m_phi = phi;
+	}
+
 	void SetAspectRatio(float width, float height);
 	void SetViewMatrix(glm::vec3 from, glm::vec3 to, glm::vec3 up);
 	void SetProjectionMatrix(float fieldOfView, float aspectRatio, float near, float far);

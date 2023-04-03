@@ -35,6 +35,28 @@ void Scene::Draw()
         instance->Draw(this);
     }
 }
+void Scene::ChangeLights(int index, glm::vec3 position, glm::vec3 color, float intensity)
+{
+    m_pointLights[index].direction = position;
+    m_pointLights[index].color = color * intensity;
+}
+void Scene::ChangeObj(int index, glm::vec3 position, glm::vec3 rotation, glm::vec3 scale)
+{
+    for (int i = 0; i < 3 && i < m_transformObj.size(); i++)
+    {
+       m_transformObj[index].position = position;
+       m_transformObj[index].rotation = rotation;
+       m_transformObj[index].scale = scale;
+        
+    }
+
+
+    for (auto it = m_instances.begin(); it != m_instances.end(); it++)
+    {
+        Instance* instance = *it;
+        instance->Draw(this);
+    }
+}
 glm::vec2 Scene::GetWindowSize()
 {
     return m_windowSize;

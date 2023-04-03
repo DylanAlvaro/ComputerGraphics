@@ -20,6 +20,7 @@ public:
     void Draw(Scene* scene);
     static glm::mat4 MakeTransform(glm::vec3 position,
         glm::vec3 eulerAngles, glm::vec3 scale);
+    void ChangeModels();
 protected:
     glm::mat4 m_transform;
     aie::OBJMesh* m_mesh;
