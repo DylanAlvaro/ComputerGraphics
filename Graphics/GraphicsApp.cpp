@@ -42,8 +42,6 @@ bool GraphicsApp::startup() {
 	m_emitter->Initialise(1000, 500, .1f, 1.0f, 1, 5, 1, .1f, 
 	glm::vec4(0, 0, 1, 1), glm::vec4(0, 1, 0, 1));
 
-	//m_light.direction = glm::normalize(glm::vec3(glm::cos(time * 2), glm::sin(time * 2), 0));
-	
 	m_scene = new Scene(&m_flyCam, glm::vec2(getWindowWidth(), getWindowHeight()),
 		light, m_ambientLight);
 
@@ -85,31 +83,24 @@ void GraphicsApp::update(float deltaTime) {
 
 	if (input->isKeyDown(aie::INPUT_KEY_ESCAPE))
 		quit();
-	//grab the time since the application has started
-
-	// rotate the light to emulate a 'day/night' cycle
 	
 	FlyCamera* FC = &m_flyCam;
-
-	m_emitter->Update(deltaTime, FC->GetWorldTransform(
+	m_emitter->Update(deltaTime, FC->GetTransform(
 		m_flyCam.GetPosition(), glm::vec3(0), glm::vec3(1)));
 
 	m_flyCam.Update(deltaTime);
-	//m_quadTransform = glm::rotate(m_quadTransform, .02f, glm::vec3(0, 1, 0));
 
 	mat4 t = glm::rotate(mat4(1), time, glm::normalize(vec3(0, 1, 0)));
 	t[3] = vec4(0, 0, 0, 1);
 
-	if (toggleFlyCam)
+	//cameras
+	if (toggleFlyCam) 
+	{
 		SetFlyCamera();
-		//SetCamera(dynamic_cast<SimpleCamera*>(&m_flyCam));
-		//SetFlyCamera();
-
+	}
+		
 	if (toggleStationaryCamX)
 	{
-		//m_simpleCamera = m_stationaryCam;
-		//m_simpleCamera.SetPosition(glm::vec3(-10, 0, 0));
-		//m_simpleCamera.SetRotation(0, 0);
 		SetStationaryCameraX();
 	}
 
@@ -121,26 +112,16 @@ void GraphicsApp::update(float deltaTime) {
 	if (toggleStationaryCamZ)
 	{
 		SetStationaryCameraZ();
-		//m_simpleCamera = m_stationaryCam;
-		//m_simpleCamera.SetPosition(glm::vec3(0, 0, -10));
-		//m_simpleCamera.SetRotation(90, 0);
 	}
-		//SetCamera(dynamic_cast<SimpleCamera*>(&m_stationaryCam));
 
 	if (toggleSimpleCam)
+	{
 		SetSimpleCamera();
-		//SetCamera(dynamic_cast<SimpleCamera*>(&m_simpleCamera));
+	}
 
 
 	m_scene->ChangeLights(0, pointLightPos1, pointLightCol1, pointLight1Intensity);
 	m_scene->ChangeLights(1, pointLightPos2, pointLightCol2, pointLight2Intensity);
-
-	//m_scene->ChangeLights(0, glm::vec3(0), m_startColor, 50);
-
-	m_scene->ChangeObj(0, m_spearPosition, m_spearRotation, m_spearScale);
-	m_scene->ChangeObj(1, m_gunPosition, m_gunRotation, m_gunScale);
-
-	//m_simpleCamera.Update(deltaTime);
 
 
 	ImGUILights();
@@ -156,19 +137,19 @@ void GraphicsApp::draw()
 	// wipe the screen to the background colour
 	clearScreen();
 
-	// update perspective based on screen size
-	//glm::perspective(glm::pi<float>() * 0.25f, 16.0f / 9.0f, 0.1f, 1000.0f);
-
 	auto pv = m_projectionMatrix * m_viewMatrix;
 
 	m_scene->Draw();
 
 	m_particleShader.bind();
 	m_particleShader.bindUniform("ProjectionViewModel", pv * m_particleEmitTransform);
-	
 
 	Gizmos::draw(m_projectionMatrix * m_viewMatrix);
 	
+
+	/// <summary>
+	/// if the user toggles these objects spawn in 
+	/// </summary>
 	if(toggleParticles)
 		m_emitter->Draw();
 	
@@ -185,32 +166,16 @@ void GraphicsApp::draw()
 		PhongDraw(pv * m_dragonTransform, m_dragonTransform);
 
 	if (toggleSpear)
-	{
-		for (int i = 0; i < 1; i++)
-			m_scene->AddInstance(new Instance(glm::vec3(i * 2, 0, 0),
-				glm::vec3(0, i * 30, 0), m_spearScale,
-				&m_spearMesh, &m_normalLitShader));
-	}
+		ObjDraw(pv, m_spearTransform, &m_spearMesh);
 	
 	if (toggleGun)
-	{
-			m_scene->AddInstance(new Instance(glm::vec3(0 * 2, 0, 0),
-				glm::vec3(0, 0, 0), m_gunScale,
-				&m_gunMesh, &m_normalLitShader));
-	}
+		ObjDraw(pv, m_gunTransform, &m_gunMesh);
 
-	//if (togglePointLightGizmos)
-	//{
-	//	Gizmos::addSphere(vec3(0), .25f, 8, 8, vec4(0.35, 0.22, 0.08, 1));
-	//}
 
 	m_renderTarget.unbind();
 	
 	clearScreen();
-
-
 	m_scene->Draw();
-
 
 	// Bind the post process shader and the texture
 	m_postProcessShader.bind();
@@ -477,7 +442,8 @@ void GraphicsApp::ObjDraw(glm::mat4 pv, glm::mat4 transform, aie::OBJMesh* objMe
 {
 	m_normalLitShader.bind();
 	// Bind the camera position    
-
+	auto pvm = m_scene->GetCamera()->GetProjectionMatrix(
+		m_scene->GetWindowSize().x, m_scene->GetWindowSize().y) * m_scene->GetCamera()->GetViewMatrix() * m_spearTransform;
 	m_normalLitShader.bindUniform("CameraPosition", glm::vec3(glm::inverse(m_viewMatrix)[3]));
 	
 	m_normalLitShader.bindUniform("LightDirection", m_scene->GetLight().direction);
@@ -487,9 +453,22 @@ void GraphicsApp::ObjDraw(glm::mat4 pv, glm::mat4 transform, aie::OBJMesh* objMe
 	m_normalLitShader.bindUniform("ProjectionViewModel", pv * transform);
 	m_normalLitShader.bindUniform("ModelMatrix", transform);
 	
+	
+	int numberOfLights = m_scene->NumberOfLights();
+	m_normalLitShader.bindUniform("numLights", numberOfLights);
+	m_normalLitShader.bindUniform("PointLightPositions", numberOfLights,
+		m_scene->GetPointLightPositions());
+	m_normalLitShader.bindUniform("PointLightColors", numberOfLights,
+		m_scene->GetPointLightColors());
+
+
 	objMesh->draw();
 }
 
+/// <summary>
+/// Loads in a .obj for the dragon also changing its transform
+/// </summary>
+/// <returns></returns>
 bool GraphicsApp::DragonLoader()
 {
 	if (m_dragonMesh.load("./stanford/Dragon.obj", true, true) == false)
@@ -507,7 +486,10 @@ bool GraphicsApp::DragonLoader()
 
 	return true;
 }
-
+/// <summary>
+/// draws the .obj
+/// </summary>
+/// <param name="pvm"></param>
 void GraphicsApp::DragonDraw(glm::mat4 pvm)
 {
 	m_colorShader.bind();
@@ -518,24 +500,31 @@ void GraphicsApp::DragonDraw(glm::mat4 pvm)
 
 	m_dragonMesh.draw();
 }
-
+/// <summary>
+/// loads in .obj of a gun also changing its transform
+/// </summary>
+/// <returns></returns>
 bool GraphicsApp::GunLoader()
 {
-	m_gunTransform = {
-		10, 0, 0, 0,
-		0, 10, 0, 0,
-		0, 0, 10, 0,
-		0, 0, 0, 0.5f };
-
 	if (m_gunMesh.load("./traveller/M1887.obj", true, true) == false)
 	{
 		printf("traveller Mesh Error!\n");
 		return false;
 	}
 
+	m_gunTransform = {
+		10, 0, 0, 0,
+		0, 10, 0, 0,
+		0, 0, 10, 0,
+		0, 0, 0, 0.5f };
+
 	return true;
 }
 
+/// <summary>
+/// draws the .obj
+/// </summary>
+/// <param name="pvm"></param>
 void GraphicsApp::GunDraw(glm::mat4 pvm)
 {
 	m_colorShader.bind();
@@ -686,6 +675,7 @@ void GraphicsApp::PhongDraw(glm::mat4 pvm, glm::mat4 transform)
 	m_dragonMesh.draw();
 }
 
+
 void GraphicsApp::ChangeParticles(unsigned int _maxParticles, unsigned int _emitRate, float _lifetimeMin, float _lifeTimeMax, float _velocityMin, float _velocityMax, float _startSize, float _endSize, const glm::vec4& _startColor, const glm::vec4& _endColor)
 {
 	m_maxParticles = _maxParticles;
@@ -700,6 +690,9 @@ void GraphicsApp::ChangeParticles(unsigned int _maxParticles, unsigned int _emit
 	m_firstDead = 0;
 }
 
+/// <summary>
+/// allows to change variables such as the lights direction and color also allows for the particle system to become active.
+/// </summary>
 void GraphicsApp::ImGUILights()
 {
 	ImGui::Begin("Lighting & Post-Processing Settings");
@@ -746,6 +739,10 @@ void GraphicsApp::ImGUILights()
 
 	ImGui::End();
 }
+
+/// <summary>
+/// ImGUI cameras uses the imgui system to create an interactive dropdown that allows the user to make cameras active or not active. 
+/// </summary>
 void GraphicsApp::ImGUICamera()
 {
 	ImGui::Begin("Camera Positions");
@@ -765,52 +762,9 @@ void GraphicsApp::ImGUICamera()
 
 	ImGui::End();
 }
-void GraphicsApp::ImGUIPlanets()
-{
-	ImGui::Begin("Solar System ");
-
-	//ImGui::Checkbox("Toggle Planets", &)
-
-	if (ImGui::CollapsingHeader("Sun"))
-	{
-		ImGui::Checkbox("Visible", &sunVisible);
-	}
-	if (ImGui::CollapsingHeader("Mercury"))
-	{
-		ImGui::Checkbox("Visible", &mercuryVisible);
-	}
-	if (ImGui::CollapsingHeader("Venus"))
-	{
-		ImGui::Checkbox("Visible", &venusVisible);
-	}
-	if (ImGui::CollapsingHeader("Earth"))
-	{
-		ImGui::Checkbox("Toggle Simple Cam", &earthVisible);
-	}
-	if (ImGui::CollapsingHeader("Mars"))
-	{
-		ImGui::Checkbox("Toggle Simple Cam", &marsVisible);
-	}
-	if (ImGui::CollapsingHeader("Jupitar"))
-	{
-		ImGui::Checkbox("Toggle Simple Cam", &jupitarVisible);
-	}
-	if (ImGui::CollapsingHeader("Saturn"))
-	{
-		ImGui::Checkbox("Toggle Simple Cam", &saturnVisible);
-	}
-	if (ImGui::CollapsingHeader("Uranus"))
-	{
-		ImGui::Checkbox("Toggle Simple Cam", &uranusVisible);
-	}
-	if (ImGui::CollapsingHeader("Neptune"))
-	{
-		ImGui::Checkbox("Toggle Simple Cam", &neptuneVisible);
-	}
-
-	ImGui::End();
-}
-
+/// <summary>
+/// ImGUI shapes uses the imgui system to create an interactive dropdown that allows the user to make certain gameobjects active in the scene or not 
+/// </summary>
 void GraphicsApp::ImGUIShapes()
 {
 	ImGui::Begin("Shapes & Custom Models");
@@ -823,27 +777,17 @@ void GraphicsApp::ImGUIShapes()
 	{
 		if (ImGui::CollapsingHeader("Change Spear"))
 		{
-			ImGui::DragFloat3("Spears Scale", &m_spearScale[0], 0, 3);
-			ImGui::DragFloat3("Spears Position", &m_spearPosition[0], 0, 3);
-			ImGui::DragFloat3("Spears Rotation", &m_spearRotation[0], 90, 3);
 			ImGui::Checkbox("Spear", &toggleSpear);
 		}
 
 		if (ImGui::CollapsingHeader("Change Dragon"))
 		{
 			ImGui::Checkbox("Dragon", &toggleDragon);
-			ImGui::DragFloat3("Dragons Position", &m_dragonPosition[0], 0, 3);
-			ImGui::DragFloat3("Dragons Rotation", &m_dragonRotation[0], 90, 3);
-			ImGui::DragFloat3("Dragons Scale", &m_dragonScale[0], 0, 3);
-
 		}
 
 		if (ImGui::CollapsingHeader("Change Gun"))
 		{
 			ImGui::Checkbox("Gun", &toggleGun);
-			ImGui::DragFloat3("Guns Position", &m_gunPosition[0], 0, 3);
-			ImGui::DragFloat3("Guns Rotation", &m_gunRotation[0], 90, 3);
-			ImGui::DragFloat3("Guns Scale", &m_gunScale[0], 0, 3);
 		}
 	}
 
@@ -853,47 +797,58 @@ void GraphicsApp::ImGUIShapes()
 	ImGui::End();
 }
 
+/// <summary>
+/// These Set Camera functions below work by getting the cameras view matrix and changing them depending on what it is being changed to (fly cam, stationary x, y, or z)
+/// </summary>
+/// <param name="camera"></param>
 void GraphicsApp::SetCamera(SimpleCamera* camera)
 {
 	m_viewMatrix = camera->GetViewMatrix();
 	m_projectionMatrix = camera->GetProjectionMatrix(getWindowWidth(), getWindowHeight());
 	m_scene->SetCamera(camera);
 }
-
 void GraphicsApp::SetFlyCamera()
 {
 	m_viewMatrix = m_flyCam.GetViewMatrix();
 	m_projectionMatrix = m_flyCam.GetProjectionMatrix(getWindowWidth(), getWindowHeight());
-	//m_scene->SetCamera(&m_flyCam);
-}
-void GraphicsApp::SetOribtalCamera()
-{
-	m_viewMatrix = m_oribtalCam.GetViewMatrix();
-	m_projectionMatrix = m_oribtalCam.GetProjectionMatrix(getWindowWidth(), getWindowHeight());
-	//m_scene->SetCamera(&m_flyCam);
+	m_scene->SetCamera(&m_flyCam);
+	
+	toggleStationaryCamX = false;
+	toggleStationaryCamY = false;
+	toggleStationaryCamZ = false;
 }
 void GraphicsApp::SetStationaryCameraX()
 {
-	m_viewMatrix = m_stationaryCam.GetViewMatrix();
-	m_projectionMatrix = m_stationaryCam.GetProjectionMatrix(getWindowWidth(), getWindowHeight());
-	//m_scene->SetCamera(&m_flyCam);
+	m_viewMatrix = m_stationaryCamX.GetViewMatrix();
+	m_projectionMatrix = m_stationaryCamX.GetProjectionMatrix(getWindowWidth(), getWindowHeight());
+	m_scene->SetCamera(&m_stationaryCamX);
+
+	toggleFlyCam = false;
+	toggleStationaryCamY = false;
+	toggleStationaryCamZ = false;
 }
 void GraphicsApp::SetStationaryCameraY()
 {
-	m_simpleCamera = m_stationaryCam;
+	m_viewMatrix = m_simpleCamera.GetViewMatrix();
 	m_simpleCamera.SetPosition(glm::vec3(0, 10, 0));
 	m_simpleCamera.SetRotation(0, -90);
-	m_scene->SetCamera(&m_simpleCamera);
+	m_scene->SetCamera(&m_stationaryCamY);
 
+	toggleFlyCam = false;
+	toggleStationaryCamX = false;
+	toggleStationaryCamZ = false;
 }
 void GraphicsApp::SetStationaryCameraZ()
 {
-	m_simpleCamera = m_stationaryCam;
+	m_viewMatrix = m_simpleCamera.GetViewMatrix();
 	m_simpleCamera.SetPosition(glm::vec3(0, 0, -10));
 	m_simpleCamera.SetRotation(90, 0);
-	m_scene->SetCamera(&m_simpleCamera);
-}
+	m_scene->SetCamera(&m_stationaryCamZ);
 
+	toggleFlyCam = false;
+	toggleStationaryCamX = false;
+	toggleStationaryCamY = false;
+}
 void GraphicsApp::SetSimpleCamera()
 {
 	//m_viewMatrix = m_simpleCamera.GetViewMatrix();

@@ -12,6 +12,7 @@ public:
 	glm::mat4 GetViewMatrix();
 	glm::mat4 GetProjectionMatrix(float width, float height);
 	glm::mat4 GetWorldTransform(glm::vec3 camPos, glm::vec3 eularAngles, glm::vec3 scale);
+	glm::mat4 GetTransform(glm::vec3 position, glm::vec3 eularAngles, glm::vec3 scale);
 	glm::mat4 GetProjectionViewMatrix();
 	glm::mat4 GetAspectRatio();
 

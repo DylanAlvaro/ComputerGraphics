@@ -14,24 +14,7 @@
 #include "RenderTarget.h"
 #include "ParticleEmitter.h"
 
-//struct Transform
-//{
-//	Transform()
-//	{
-//		position = glm::vec3(0.0f);
-//		rotation = glm::vec3(0.0f);
-//		scale = glm::vec3(1.0f);
-//	}
-//	Transform(glm::vec3 _translate, glm::vec3 _scale, glm::vec3 _rotation)
-//	{
-//		position = _translate;
-//		scale = _scale;
-//		rotation = _rotation;
-//	}
-//	glm::vec3 scale;
-//	glm::vec3 position;
-//	glm::vec3 rotation;
-//};
+//const int MAX_LIGHTS = 4;
 
 class GraphicsApp : public aie::Application {
 public:
@@ -74,12 +57,24 @@ protected:
 
 	void PhongDraw(glm::mat4 pvm, glm::mat4 transform);
 
+	void ChangeObjs(glm::mat4 pv, Scene* scene, aie::OBJMesh* objMesh);
+
+
 	void ChangeParticles(unsigned int _maxParticles, unsigned int _emitRate,
 		float _lifetimeMin, float _lifeTimeMax,
 		float _velocityMin, float _velocityMax,
 		float _startSize, float _endSize,
 		const glm::vec4& _startColor, const glm::vec4& _endColor);
 
+
+	std::vector<Light>& GetPointLights() { return m_pointLights; }
+	int NumberOfLights() { return m_pointLights.size(); }
+	glm::vec3* GetPointLightPositions() { return &m_pointLightPositions[0]; }
+	glm::vec3* GetPointLightColors() { return &m_pointLightColors[0]; }
+
+	glm::vec3 m_pointLightPositions[MAX_LIGHTS];
+	glm::vec3 m_pointLightColors[MAX_LIGHTS];
+	std::vector<Light> m_pointLights;
 
 	int m_postProccessEffect = -1;
 
@@ -92,11 +87,12 @@ protected:
 
 	void SetCamera(SimpleCamera* camera);
 	void SetFlyCamera();
-	void SetOribtalCamera();
 	void SetStationaryCameraX();
 	void SetStationaryCameraY();
 	void SetStationaryCameraZ();
 	void SetSimpleCamera();
+
+
 
 	Scene*               m_scene;
 	Scene*               m_shapeScene;
@@ -134,6 +130,8 @@ protected:
 	aie::OBJMesh         m_dragonMesh;
 	glm::mat4            m_dragonTransform;
 
+	glm::mat4            m_Objtransform;
+
 	aie::OBJMesh         m_gunMesh;
 	glm::mat4            m_gunTransform;
 	
@@ -143,7 +141,9 @@ protected:
 	Mesh                 m_fullScreenQuad;
 
 	SimpleCamera         m_simpleCamera;
-	StationaryCamera     m_stationaryCam;
+	StationaryCamera     m_stationaryCamX;
+	StationaryCamera     m_stationaryCamY;
+	StationaryCamera     m_stationaryCamZ;
 	FlyCamera            m_flyCam;
 	OribitalCamera       m_oribtalCam;
 
